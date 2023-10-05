@@ -17,17 +17,19 @@ class SendMail implements ShouldQueue
     private $email;
     private $token;
     private $siteName;
+    private $firstName;
     private $roleId;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($email,$token,$siteName,$roleId)
+    public function __construct($email,$token,$siteName,$firstName,$roleId)
     {
         $this->email = $email;
         $this->token = $token;
         $this->siteName = $siteName;
+        $this->firstName = $firstName;
         $this->roleId = $roleId;
     }
 
@@ -39,6 +41,6 @@ class SendMail implements ShouldQueue
     public function handle()
     {
         Mail::to($this->email)
-            ->send(new VerifyEmail($this->email,$this->token,$this->siteName,1,$this->roleId));
+            ->send(new VerifyEmail($this->email,$this->token,$this->siteName,1,$this->firstName,$this->roleId));
     }
 }

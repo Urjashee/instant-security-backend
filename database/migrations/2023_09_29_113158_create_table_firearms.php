@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddColumnDobToTableUsers extends Migration
+class CreateTableFirearms extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,10 @@ class AddColumnDobToTableUsers extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->date("dob")->after("last_name")->nullable(true);
+        Schema::create('firearms', function (Blueprint $table) {
+            $table->id();
+            $table->string("name", 100);
+            $table->timestamps();
         });
     }
 
@@ -25,8 +27,6 @@ class AddColumnDobToTableUsers extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('firearms');
     }
 }

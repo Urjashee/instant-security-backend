@@ -12,6 +12,7 @@ class Constants
     const CURRENT_LAST_NAME_KEY = "___current_last_name_key";
     const CURRENT_ROLE_ID_KEY = "___current_role_id_key";
     const CURRENT_ROLE_NAME_KEY = "___current_role_name_key";
+    const CURRENT_PROFILE_STATUS_KEY = "___current_profile_status_key";
     const REFRESH_TOKEN_UUID_KEY = "___refresh_token_uuid_key";
     const IMAGE_STORAGE_LOCATION = "profile_image";
     const ARTIST_STORAGE_LOCATION = "artist_image";

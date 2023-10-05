@@ -23,7 +23,6 @@ class JwtAuthMiddleware
     {
         if ($request->bearerToken() == null)
             return ResponseFormatter::errorResponse( 'Token missing in header!');
-            //return response()->json(["success" => false, "status" => "error", "message" => "Token missing in header!"]);
         $signer = new Sha512();
         $token = (new Parser())->parse((string)$request->bearerToken());
         $extra = [];
@@ -35,6 +34,7 @@ class JwtAuthMiddleware
                 Constants::CURRENT_LAST_NAME_KEY => $token->getClaim("lastname"),
                 Constants::CURRENT_ROLE_ID_KEY => $token->getClaim("role_id"),
                 Constants::CURRENT_ROLE_NAME_KEY => $token->getClaim("role_name"),
+                Constants::CURRENT_PROFILE_STATUS_KEY => $token->getClaim("profile_exist"),
             ], $extra)));
         else
             return ResponseFormatter::errorResponse( 'Invalid token!');

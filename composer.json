@@ -19,6 +19,7 @@
         "laravel/passport": "*",
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
+        "lcobucci/jwt": "3.4",
         "league/flysystem-aws-s3-v3": "~1.0",
         "minuteoflaravel/laravel-audio-video-validator": "^1.1",
         "nuwave/lighthouse": "^5.71",

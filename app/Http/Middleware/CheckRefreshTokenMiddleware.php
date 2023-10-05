@@ -23,7 +23,7 @@ class CheckRefreshTokenMiddleware
         if ($request->bearerToken() == null)
             return abort(401);
         $signer = new Sha512();
-        $token = (new Parser())->parse((string)$request->bearerToken());
+        $token = (new Parser(new JoseEncoder()))->parse((string)$request->bearerToken());
         $extra = [];
         if ($token->verify($signer, config("jwt.secret")) && $token->hasClaim("token_expiry") && $token->hasClaim("uuid")) {
             $expiry = Carbon::parse($token->getClaim('token_expiry'));

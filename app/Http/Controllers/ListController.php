@@ -4,12 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Common\ConfigList;
 use App\Common\ResponseFormatter;
-use App\Models\Amenities;
-use App\Models\Genre;
-use App\Models\GenreCategories;
-use App\Models\Instruments;
-use App\Models\Level;
-use App\Models\ProfileTime;
+use App\Models\Firearms;
+use App\Models\States;
 use Illuminate\Http\Request;
 
 class ListController extends Controller
@@ -17,23 +13,46 @@ class ListController extends Controller
     //    Get Config List
     public function getAllLists(): \Illuminate\Http\JsonResponse
     {
-        $amenitiesList = array();
-        $amenities = Amenities::all();
-        if ($amenities) {
-            foreach ($amenities as $amenity) {
-                $amenitiesList[] = [
-                    'amenity_id' => $amenity->id,
-                    'amenity_name' => $amenity->name,
+        $stateList = array();
+        $fireArmsList = array();
+        $oshaList = array();
+        $dayList = array();
+        $states = States::where("active",1)->get();
+        $fireArms = Firearms::all();
+        if ($states) {
+            foreach ($states as $state) {
+                $stateList[] = [
+                    'id' => $state->id,
+                    'name' => $state->name,
                 ];
             }
-            $allList[] = [
-                'minimum_radius' => ConfigList::defaultValues(1),
-                'maximum_radius' => ConfigList::defaultValues(2),
-                'minimum_fee' => ConfigList::defaultValues(3),
-                'maximum_fee' => ConfigList::defaultValues(4),
-                'amenities' => $amenitiesList,
+        }
+        if ($fireArms) {
+            foreach ($fireArms as $fireArm) {
+                $fireArmsList[] = [
+                    'id' => $fireArm->id,
+                    'name' => $fireArm->name,
+                ];
+            }
+        }
+        for ($osha = 1; $osha <= 2; $osha++) {
+            $oshaList[] = [
+                'id' => $osha,
+                'name' => ConfigList::oshaType($osha),
             ];
         }
+        for ($days = 1; $days <= 2; $days++) {
+            $dayList[] = [
+                'id' => $days,
+                'name' => ConfigList::dayString($days),
+            ];
+        }
+        $allList = [
+            'states' => $stateList,
+            'fire_arms' => $fireArmsList,
+            'osha' => $oshaList,
+            'day_of_week' => $dayList,
+        ];
         return ResponseFormatter::successResponse("", $allList);
     }
 }

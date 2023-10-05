@@ -2,29 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\FunctionHelpers\UserFunctions;
 use App\Constants;
 use App\Common\ResponseFormatter;
-use App\Jobs\ForgotPasswordMail;
 use App\Jobs\SendMail;
-use App\Mail\ResetPassword;
-use App\Mail\VerifyEmail;
+use App\Models\CustomerProfile;
 use App\Models\PasswordReset;
 use App\Models\Roles;
 use App\Models\User;
+use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
-    public function sendEmail() {
-//        ForgotPasswordMail::dispatch('urja@simpalm.com','token123','http://localhost:3000',2,2);
-        SendMail::dispatch('urja@simpalm.com','token123','http://localhost:3000');
+    public function sendEmail(): \Illuminate\Http\JsonResponse
+    {
+        SendMail::dispatch('urja@simpalm.com', 'token123', 'http://localhost:3000');
         return ResponseFormatter::successResponse("User added!");
     }
 
@@ -32,50 +28,91 @@ class UserController extends Controller
     {
         $validator = Validator::make($request->all(), [
             "email" => "required|email",
-            "role_id" => "required|numeric|in:1,2",
             "first_name" => "alpha",
             "last_name" => "alpha",
+            "phone_number" => "required",
+            "address1" => "required",
+            "state" => "numeric",
+            "city" => "required",
+            "zipcode" => "required",
             "password" => "min:8|alpha_num",
         ]);
         $siteName = Config::get('constants.url');
         if ($validator->fails())
-            return ResponseFormatter::errorResponse( $validator->errors());
-            //return response()->json(["success" => false, "status" => "error", "message" => "Missing required input"]);
+            return ResponseFormatter::errorResponse($validator->errors());
 
         $user = User::where("email", $request->input("email"))->first();
         if ($user) {
-            return ResponseFormatter::errorResponse( 'User already exists!');
-            //return response()->json(["success" => false, "status" => "error", "message" => "User already exists!"]);
+            return ResponseFormatter::errorResponse('User already exists!');
         } else {
-            $newUser = new User;
-            $newUser->email = $request->input("email");
-            $newUser->user_role_id = $request->input("role_id");
-            $newUser->active = 0;
-            if ($request->has('first_name')) {
-                $newUser->first_name = $request->input("first_name");
-            }
-            if ($request->has('last_name')) {
-                $newUser->last_name = $request->input("last_name");
-            }
-            if ($request->has('dob')) {
-                $newUser->dob = $request->input("dob");
-            }
-            if ($request->has('password')) {
-                $newUser->password = Hash::make($request->input("password"));
-            }
-            $newUser->save();
+            $user = UserFunctions::addUser($request,3);
 
-            $token = Str::random(64);
-            $newPassword = new PasswordReset();
-            $newPassword->email = $request->input("email");
-            $newPassword->token = $token;
-            $newPassword->active_token = 0;
-            $newPassword->type = 1;
-            $newPassword->created_at = Carbon::now();
-            $newPassword->save();
-            SendMail::dispatch($request->input("email"),$token,$siteName,$request->input("role_id"));
+            $newUserProfile = new UserProfile();
+            $newUserProfile->user_id = $user->id;
+            $newUserProfile->address1 = $request->input("address1");
+            if ($request->has("address2")) {
+                $newUserProfile->address2 = $request->input("address2");
+            }
+            $newUserProfile->state = $request->input("state");
+            $newUserProfile->city = $request->input("city");
+            $newUserProfile->zipcode = $request->input("zipcode");
+            $newUserProfile->save();
+
+            UserFunctions::verifyRequest($request,3);
             return ResponseFormatter::successResponse("User added!");
-                //return response()->json(["success" => true, "status" => "ok", "message" => "User added!"]);
+        }
+    }
+
+    public function addNewCustomer(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            "email" => "required|email",
+            "first_name" => "alpha",
+            "last_name" => "alpha",
+            "phone_number" => "required",
+            "address1" => "required",
+            "state" => "numeric",
+            "city" => "numeric",
+            "zipcode" => "numeric",
+            "password" => "min:8|alpha_num",
+            "state_id_image" => "required",
+        ]);
+
+        if ($validator->fails())
+            return ResponseFormatter::errorResponse($validator->errors());
+
+        $user = User::where("email", $request->input("email"))->first();
+        if ($user) {
+            return ResponseFormatter::errorResponse('User already exists!');
+        } else {
+
+            $user = UserFunctions::addUser($request,2);
+
+            $newCustomerProfile = new CustomerProfile();
+            $newCustomerProfile->user_id = $user->id;
+            $newCustomerProfile->address1 = $request->input("address1");
+            if ($request->has("address2")) {
+                $newCustomerProfile->address2 = $request->input("address2");
+            }
+            $newCustomerProfile->state = $request->input("state");
+            $newCustomerProfile->city = $request->input("city");
+            $newCustomerProfile->zipcode = $request->input("zipcode");
+
+            $fileNameProfile = time().'.'.$request->file('profile_image')->getClientOriginalExtension();
+            $fileNameState = time().'.'.$request->file('state_id_image')->getClientOriginalExtension();
+
+            $profile_images = $request->file("profile_image");
+            $profile_images->storeAs('web_profile_images', $fileNameProfile, 's3');
+            $newCustomerProfile->profile_image = 'web_profile_images/' . $fileNameProfile;
+
+            $profile_images = $request->file("state_id_image");
+            $profile_images->storeAs('web_state_id_images', $fileNameState, 's3');
+            $newCustomerProfile->state_id_image = 'web_state_id_images/' . $fileNameState;
+
+            $newCustomerProfile->save();
+
+            UserFunctions::verifyRequest($request,2);
+            return ResponseFormatter::successResponse("User added!");
         }
     }
 
@@ -86,20 +123,17 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse( $validator->errors());
-            //return response()->json(["success" => false, "status" => "error", "message" => "Missing required input"]);
+            return ResponseFormatter::errorResponse($validator->errors());
 
         $token = PasswordReset::where("token", $request->input("token"))->first();
         if (!$token) {
-            return ResponseFormatter::errorResponse( 'Incorrect token or type');
-           // return response()->json(["success" => false, "status" => "error", "message" => "Incorrect token or type"]);
+            return ResponseFormatter::errorResponse('Incorrect token or type');
         } else {
             $email = $token->email;
             $id = $token->id;
             $user = User::where("email", $email)->first();
             if (!$user)
-                return ResponseFormatter::errorResponse( 'User not found!');
-                //return response()->json(["success" => false, "status" => "error", "message" => "User not found!"]);
+                return ResponseFormatter::errorResponse('User not found!');
             else {
                 if ($user) {
                     $user->active = 1;
@@ -109,51 +143,47 @@ class UserController extends Controller
                     $tokenData->active_token = 1;
                     $tokenData->update();
                     return ResponseFormatter::successResponse("Account verified!");
-                    //return response()->json(["success" => true, "status" => "ok", "message" => "Account verified!"]);
                 } else {
-                    return ResponseFormatter::errorResponse( 'Account not verified!');
-                    //return response()->json(["success" => false, "status" => "ok", "message" => "Account not verified!"]);
+                    return ResponseFormatter::errorResponse('Account not verified!');
                 }
             }
         }
     }
 
-    public function getUser($id)
+    public function getUser($id): \Illuminate\Http\JsonResponse
     {
         $user = User::where("id", $id)->first();
         if (!$user)
-            return ResponseFormatter::errorResponse( 'User not found!');
-            //return response()->json(["success" => false, "status" => "error", "message" => "User not found!"]);
+            return ResponseFormatter::errorResponse('User not found!');
         else {
-            return ResponseFormatter::successResponse("User detail found.",$user);
-            //return response()->json(["success" => true, "status" => "ok", "data" => $user]);
+            return ResponseFormatter::successResponse("User detail found.", $user);
         }
     }
 
     public function getRoles(): \Illuminate\Http\JsonResponse
     {
         $roles = Roles::all();
-        return ResponseFormatter::successResponse("Role detail.",$roles);
+        return ResponseFormatter::successResponse("Role detail.", $roles);
         //return response()->json(["success" => true, "status" => "ok", "data" => $roles]);
     }
 
     public function getAllUsers(): \Illuminate\Http\JsonResponse
     {
         $users = User::all();
-        return ResponseFormatter::successResponse(" detail.",$users);
+        return ResponseFormatter::successResponse(" detail.", $users);
         //return response()->json($users);
     }
 
     public function getCurrentUser(Request $request): \Illuminate\Http\JsonResponse
     {
         $user = User::where("email", $request->input(Constants::CURRENT_EMAIL_KEY))->first();
-        return ResponseFormatter::successResponse("Role detail found.",array('role_name'=> $user->role->name));
+        return ResponseFormatter::successResponse("Role detail found.", array('role_name' => $user->role->name));
     }
 
-    public function getCurrentUserInfo(Request $request)
+    public function getCurrentUserInfo(Request $request): \Illuminate\Http\JsonResponse
     {
         $user = User::where("email", $request->input(Constants::CURRENT_EMAIL_KEY))->first();
-        return ResponseFormatter::successResponse("Current user detail found.",$user);
+        return ResponseFormatter::successResponse("Current user detail found.", $user);
     }
 }
 

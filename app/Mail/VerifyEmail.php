@@ -14,6 +14,7 @@ class VerifyEmail extends Mailable
     public $tokens;
     public $siteName;
     public $type;
+    public $firstName;
     public $roleId;
 
     /**
@@ -21,12 +22,13 @@ class VerifyEmail extends Mailable
      *
      * @return void
      */
-    public function __construct($email,$tokens,$siteName,$type,$roleId)
+    public function __construct($email,$tokens,$siteName,$type,$firstName,$roleId)
     {
         $this->email = $email;
         $this->tokens = $tokens;
         $this->siteName = $siteName;
         $this->type = $type;
+        $this->firstName = $firstName;
         $this->roleId = $roleId;
     }
 
@@ -38,9 +40,9 @@ class VerifyEmail extends Mailable
     public function build()
     {
         if ($this->roleId == 1) {
-            return $this->subject('Here is your link to verify your Jam Session account')->markdown('emails.verifyAdmin');
+            return $this->subject('Here is your link to verify your Instant Security account')->markdown('emails.verifyAdmin');
         } else {
-            return $this->subject('Here is your link to verify your Jam Session account')->markdown('emails.verify');
+            return $this->subject('Here is your link to verify your Instant Security account')->markdown('emails.verify');
         }
     }
 }
