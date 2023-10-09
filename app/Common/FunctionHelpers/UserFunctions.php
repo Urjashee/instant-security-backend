@@ -24,6 +24,7 @@ class UserFunctions
         $newUser->password = Hash::make($request->input("password"));
         $newUser->user_role_id = $role_id;
         $newUser->active = 0;
+        $newUser->state_id = $request->input("state");
         $newUser->save();
         $newUser->refresh();
 

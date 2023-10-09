@@ -37,9 +37,9 @@ class ResetPassword extends Mailable
     public function build()
     {
         if ($this->roleId == 1) {
-            return $this->subject('Here is your link to reset your Jam Session password')->markdown('emails.resetAdminPassword');
+            return $this->subject('Here is your link to reset your Instant Security password')->markdown('emails.resetAdminPassword');
         } else {
-            return $this->subject('Here is your link to reset your Jam Session password')->markdown('emails.resetPassword');
+            return $this->subject('Here is your link to reset your Instant Security password')->markdown('emails.resetPassword');
         }
     }
 }

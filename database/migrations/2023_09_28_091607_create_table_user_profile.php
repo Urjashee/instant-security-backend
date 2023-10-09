@@ -18,7 +18,7 @@ class CreateTableUserProfile extends Migration
             $table->unsignedBigInteger('user_id');
             $table->text('address1');
             $table->text('address2')->nullable(true);
-            $table->string('state');
+//            $table->string('state');
             $table->text('city');
             $table->text('zipcode');
             $table->text('profile_image')->nullable(true);

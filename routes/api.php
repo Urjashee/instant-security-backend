@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::post("/user/login", [\App\Http\Controllers\LoginController::class, 'login']);
-Route::post("/web/login", [\App\Http\Controllers\LoginController::class, 'loginAdmin']);
+Route::post("/web/login", [\App\Http\Controllers\LoginController::class, 'loginWeb']);
+Route::post("/admin/login", [\App\Http\Controllers\LoginController::class, 'loginAdmin']);
+
 Route::post("/user/register", [\App\Http\Controllers\UserController::class, 'addNewUser']);
 Route::post("/web/register", [\App\Http\Controllers\UserController::class, 'addNewCustomer']);
 Route::post("/forgot-password", [\App\Http\Controllers\ForgotPasswordController::class, 'resetPasswordRequest']);
@@ -27,7 +29,7 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
     Route::get("/list/config", [\App\Http\Controllers\ListController::class, 'getAllLists']);
 
     Route::group(["middleware" => ["rbac:user"]], function () {
-        Route::group(['prefix' => '/user'], function() {
+        Route::group(['prefix' => '/user'], function () {
             Route::get("/profile-check-list", [\App\Http\Controllers\ProfileController::class, 'filledProfileList']);
             Route::post("/edit-profile", [\App\Http\Controllers\ProfileController::class, 'editUserProfile']);
 
@@ -47,17 +49,23 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
     });
 
     Route::group(["middleware" => ["rbac:customer"]], function () {
-        Route::group(['prefix' => '/web'], function() {
+        Route::group(['prefix' => '/web'], function () {
             Route::post("/edit-profile", [\App\Http\Controllers\ProfileController::class, 'editCustomerProfile']);
             Route::get("/profile", [\App\Http\Controllers\ProfileController::class, 'getCustomerProfile']);
+            Route::post("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'addJobs']);
         });
 
     });
 
-    Route::group(["middleware" => ["rbac:admin"]], function () {
-        Route::get("/users", [\App\Http\Controllers\UserController::class, 'getAllUsers']);
-        Route::get("/user/{id}", [\App\Http\Controllers\UserController::class, 'getUser']);
-        Route::get("/users/roles", [\App\Http\Controllers\UserController::class, 'getRoles']);
+    Route::group(["middleware" => ["rbac:super_admin"]], function () {
+        Route::group(['prefix' => '/admin'], function () {
+            Route::post("/job-type", [\App\Http\Controllers\JobTypeController::class, 'addJobType']);
+            Route::patch("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'editJobType']);
+            Route::get("/job-type", [\App\Http\Controllers\JobTypeController::class, 'getAllJobTypes']);
+            Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
+
+            Route::patch("/state/{id}", [\App\Http\Controllers\StateController::class, 'changeStateStatus']);
+        });
     });
 
     //Logout

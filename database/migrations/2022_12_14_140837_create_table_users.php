@@ -23,10 +23,12 @@ class CreateTableUsers extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password',250);
             $table->boolean('active')->default(0);
+            $table->unsignedBigInteger('state_id');
             $table->unsignedBigInteger('user_role_id');
             $table->timestamps();
 
             $table->foreign('user_role_id')->references('id')->on('roles');
+            $table->foreign('state_id')->references('id')->on('states');
         });
     }
 

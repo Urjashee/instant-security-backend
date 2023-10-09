@@ -53,7 +53,7 @@ class UserController extends Controller
             if ($request->has("address2")) {
                 $newUserProfile->address2 = $request->input("address2");
             }
-            $newUserProfile->state = $request->input("state");
+
             $newUserProfile->city = $request->input("city");
             $newUserProfile->zipcode = $request->input("zipcode");
             $newUserProfile->save();
@@ -72,7 +72,7 @@ class UserController extends Controller
             "phone_number" => "required",
             "address1" => "required",
             "state" => "numeric",
-            "city" => "numeric",
+            "city" => "required",
             "zipcode" => "numeric",
             "password" => "min:8|alpha_num",
             "state_id_image" => "required",
@@ -94,7 +94,6 @@ class UserController extends Controller
             if ($request->has("address2")) {
                 $newCustomerProfile->address2 = $request->input("address2");
             }
-            $newCustomerProfile->state = $request->input("state");
             $newCustomerProfile->city = $request->input("city");
             $newCustomerProfile->zipcode = $request->input("zipcode");
 

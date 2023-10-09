@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateTableStateLicenses extends Migration
+class CreateTableJobTypes extends Migration
 {
     /**
      * Run the migrations.
@@ -13,17 +13,13 @@ class CreateTableStateLicenses extends Migration
      */
     public function up()
     {
-        Schema::create('state_licenses', function (Blueprint $table) {
+        Schema::create('job_types', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('state_id');
-            $table->text('security_guard_license_image');
-            $table->date('security_guard_license_expiry');
-            $table->text('cpr_certificate_image');
-            $table->date('cpr_certificate_expiry')->nullable(false);
+            $table->string("name",250);
+            $table->float("hourly_rate",5,2);
             $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users');
             $table->foreign('state_id')->references('id')->on('states');
         });
     }
@@ -35,6 +31,6 @@ class CreateTableStateLicenses extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('state_licenses');
+        Schema::dropIfExists('job_types');
     }
 }

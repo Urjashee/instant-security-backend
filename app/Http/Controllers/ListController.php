@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Common\ConfigList;
 use App\Common\ResponseFormatter;
 use App\Models\Firearms;
-use App\Models\States;
+use App\Models\State;
 use Illuminate\Http\Request;
 
 class ListController extends Controller
@@ -17,7 +17,7 @@ class ListController extends Controller
         $fireArmsList = array();
         $oshaList = array();
         $dayList = array();
-        $states = States::where("active",1)->get();
+        $states = State::where("active",1)->get();
         $fireArms = Firearms::all();
         if ($states) {
             foreach ($states as $state) {

@@ -18,6 +18,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property mixed $friendly_name
  * @property mixed $address
  * @property mixed $phone_no
+ * @property mixed $state_id
  */
 class User extends Authenticatable
 {

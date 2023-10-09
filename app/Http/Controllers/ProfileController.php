@@ -7,6 +7,7 @@ use App\Common\FunctionHelpers\UserFunctions;
 use App\Common\ResponseFormatter;
 use App\Constants;
 use App\Models\CustomerProfile;
+use App\Models\FireGuardLicense;
 use App\Models\StateLicense;
 use App\Models\User;
 use App\Models\UserProfile;
@@ -26,6 +27,7 @@ class ProfileController extends Controller
         $document = 0;
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $stateLicense = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+        $fireLicenses = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($userProfile) {
             if (
                 $userProfile->profile_image != null &&
@@ -51,9 +53,9 @@ class ProfileController extends Controller
                 if (
                     $stateLicense->security_guard_license_image != null &&
                     $stateLicense->security_guard_license_expiry != null &&
-                    $stateLicense->fire_guard_license_type != null &&
-                    $stateLicense->fire_guard_license_image != null &&
-                    $stateLicense->fire_guard_license_expiry != null &&
+                    $fireLicenses->fire_guard_license_type != null &&
+                    $fireLicenses->fire_guard_license_image != null &&
+                    $fireLicenses->fire_guard_license_expiry != null &&
                     $stateLicense->cpr_certificate_image != null &&
                     $stateLicense->cpr_certificate_expiry != null
                 ) {
@@ -78,7 +80,6 @@ class ProfileController extends Controller
         $validator = Validator::make($request->all(), [
             "phone_number" => "required",
             "address1" => "required",
-            "state" => "numeric",
             "city" => "required",
             "zipcode" => "required",
         ]);
@@ -108,7 +109,6 @@ class ProfileController extends Controller
             if ($request->has("address2")) {
                 $userProfile->address2 = $request->input("address2");
             }
-            $userProfile->state = $request->input("state");
             $userProfile->city = $request->input("city");
             $userProfile->zipcode = $request->input("zipcode");
             $userProfile->update();
@@ -186,14 +186,22 @@ class ProfileController extends Controller
             }
             $stateLicense->security_guard_license_expiry = $request->input("security_guard_license_expiry");
 
-            $stateLicense->fire_guard_license_type = $request->input("fire_guard_license_type");
-            if ($request->has('fire_guard_license_image')) {
-                $fireGuardLicenseFileName = time() . '.' . $request->file('fire_guard_license_image')->getClientOriginalExtension();
-                $fire_guard_license_image = $request->file("fire_guard_license_image");
-                $fire_guard_license_image->storeAs('fire_guard_license_image', $fireGuardLicenseFileName, 's3');
-                $stateLicense->fire_guard_license_image = 'fire_guard_license_image/' . $fireGuardLicenseFileName;
+            if ($request->input('fire_guard_license') !== null) {
+//                $arrayFireGuard = json_decode($request->input('fire_guard_license'));
+                foreach ($request->input('fire_guard_license') as $key => $value) {
+                    $fire_guard_license = new FireGuardLicense();
+                    $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+                    $fire_guard_license->state_id = $request->input("state_id");
+//                    $fire_guard_license->fire_guard_license_type = $value["fire_guard_license_type"];
+                    $fire_guard_license->fire_guard_license_type = $value["fire_guard_license_type"];
+                    $fireGuardLicenseFileName = time() . '.' . $request->file("fire_guard_license.$key.fire_guard_license_image")->getClientOriginalExtension();
+                    $fire_guard_license_image = $request->file("fire_guard_license.$key.fire_guard_license_image");
+                    $fire_guard_license_image->storeAs('fire_guard_license_image', $fireGuardLicenseFileName, 's3');
+                    $fire_guard_license->fire_guard_license_image = 'fire_guard_license_image/' . $fireGuardLicenseFileName;
+                    $fire_guard_license->fire_guard_license_expiry = $value["fire_guard_license_expiry"];
+                    $fire_guard_license->save();
+                }
             }
-            $stateLicense->fire_guard_license_expiry = $request->input("fire_guard_license_expiry");
 
             if ($request->has('cpr_certificate_image')) {
                 $cprCertificateFileName = time() . '.' . $request->file('cpr_certificate_image')->getClientOriginalExtension();
@@ -236,18 +244,7 @@ class ProfileController extends Controller
             if ($request->has('security_guard_license_expiry')) {
                 $stateLicense->security_guard_license_expiry = $request->input("security_guard_license_expiry");
             }
-            if ($request->has('fire_guard_license_type')) {
-                $stateLicense->fire_guard_license_type = $request->input("fire_guard_license_type");
-            }
-            if ($request->has('fire_guard_license_image')) {
-                $fireGuardLicenseFileName = time() . '.' . $request->file('fire_guard_license_image')->getClientOriginalExtension();
-                $fire_guard_license_image = $request->file("fire_guard_license_image");
-                $fire_guard_license_image->storeAs('fire_guard_license_image', $fireGuardLicenseFileName, 's3');
-                $stateLicense->fire_guard_license_image = 'fire_guard_license_image/' . $fireGuardLicenseFileName;
-            }
-            if ($request->has('fire_guard_license_expiry')) {
-                $stateLicense->fire_guard_license_expiry = $request->input("fire_guard_license_expiry");
-            }
+
             if ($request->has('cpr_certificate_image')) {
                 $s3 = Storage::disk('s3');
                 $s3->delete($stateLicense->cpr_certificate_image);
@@ -312,24 +309,31 @@ class ProfileController extends Controller
     public function getUserProfile(Request $request): \Illuminate\Http\JsonResponse
     {
         $license = array();
+        $fireGuard = array();
         $contentData = array();
         $s3SiteName = Config::get('constants.s3_bucket');
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
         if ($userProfile) {
             $stateLicenses = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
+            $fireGuardLicenses = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
+            foreach ($fireGuardLicenses as $fireGuardLicense) {
+                $fireGuard[] = [
+                    "fire_guard_license_type" => $fireGuardLicense->fire_guard_license_type,
+                    "fire_guard_license_type_name" => $fireGuardLicense->fire_arms->name,
+                    "fire_guard_license_image" => $s3SiteName . $fireGuardLicense->fire_guard_license_image,
+                    "fire_guard_license_expiry" => $fireGuardLicense->fire_guard_license_expiry,
+                ];
+            }
             foreach ($stateLicenses as $stateLicense) {
                 $license[] = [
                     "state_id" => $stateLicense->state_id,
                     "state_name" => $stateLicense->state->name,
                     "security_guard_license_image" => $s3SiteName . $stateLicense->security_guard_license_image,
                     "security_guard_license_expiry" => $stateLicense->security_guard_license_expiry,
-                    "fire_guard_license_type" => $stateLicense->fire_guard_license_type,
-                    "fire_guard_license_type_name" => $stateLicense->fire_arms->name,
-                    "fire_guard_license_image" => $s3SiteName . $stateLicense->fire_guard_license_image,
-                    "fire_guard_license_expiry" => $stateLicense->fire_guard_license_expiry,
                     "cpr_certificate_image" => $s3SiteName . $stateLicense->cpr_certificate_image,
                     "cpr_certificate_expiry" => $stateLicense->cpr_certificate_expiry,
+                    "fire_guard" => $fireGuard
                 ];
             }
             $contentData = [
@@ -340,7 +344,7 @@ class ProfileController extends Controller
                 "user_phone_no" => $userProfile->user->phone_no,
                 "user_address_1" => $userProfile->address1,
                 "user_address_2" => $userProfile->address2,
-                "user_state" => $userProfile->state,
+                "user_state" => $userProfile->user->state_id,
                 "user_city" => $userProfile->city,
                 "user_zipcode" => $userProfile->zipcode,
                 "user_profile_image" => $s3SiteName . $userProfile->profile_image,
@@ -348,7 +352,7 @@ class ProfileController extends Controller
                 "user_govt_id_image" => $s3SiteName . $userProfile->govt_id_image,
                 "user_govt_id_expiry_date" => $userProfile->govt_id_expiry_date,
                 "user_osha_license_type" => $userProfile->osha_license_type,
-                "user_osha_license_image" => $s3SiteName . $userProfile->osha_license_image,
+                "user_osha_license_image" => $userProfile->osha_license_image == null ? null : $s3SiteName . $userProfile->osha_license_image,
                 "user_osha_license_expiry_date" => $userProfile->osha_license_expiry_date,
                 "user_account_number" => $userProfile->account_number,
                 "user_routing" => $userProfile->routing,
@@ -368,7 +372,6 @@ class ProfileController extends Controller
     {
         $validator = Validator::make($request->all(), [
             "address1" => "required",
-            "state" => "numeric",
             "city" => "required",
             "zipcode" => "numeric",
         ]);
@@ -383,7 +386,6 @@ class ProfileController extends Controller
             if ($request->has("address2")) {
                 $customer->address2 = $request->input("address2");
             }
-            $customer->state = $request->input("state");
             $customer->city = $request->input("city");
             $customer->zipcode = $request->input("zipcode");
 
@@ -430,7 +432,7 @@ class ProfileController extends Controller
                 "web_phone_no" => $userProfile->user->phone_no,
                 "web_address_1" => $userProfile->address1,
                 "web_address_2" => $userProfile->address2,
-                "web_state" => $userProfile->state,
+                "web_state" => $userProfile->user->state_id,
                 "web_city" => $userProfile->city,
                 "web_zipcode" => $userProfile->zipcode,
                 "web_profile_image" => $s3SiteName . $userProfile->profile_image,

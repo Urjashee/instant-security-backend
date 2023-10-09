@@ -24,7 +24,7 @@ class StateSeeder extends Seeder
         DB::table("states")->insert(["id" => "8", "name" => "Connecticut", "abbreviation" => "CT", "active" => 0]);
         DB::table("states")->insert(["id" => "9", "name" => "Delaware", "abbreviation" => "DE", "active" => 0]);
         DB::table("states")->insert(["id" => "10", "name" => "District Of Columbia", "abbreviation" => "DC", "active" => 0]);
-        DB::table("states")->insert(["id" => "11", "name" => "Federated States Of Micronesia", "abbreviation" => "FM", "active" => 0]);
+        DB::table("states")->insert(["id" => "11", "name" => "Federated State Of Micronesia", "abbreviation" => "FM", "active" => 0]);
         DB::table("states")->insert(["id" => "12", "name" => "Florida", "abbreviation" => "FL", "active" => 0]);
         DB::table("states")->insert(["id" => "13", "name" => "Georgia", "abbreviation" => "GA", "active" => 0]);
         DB::table("states")->insert(["id" => "14", "name" => "Guam", "abbreviation" => "GU", "active" => 0]);

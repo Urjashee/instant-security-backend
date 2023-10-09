@@ -9,7 +9,7 @@
             To verify your account, click the button below
         </p>
         <button type="button">
-            <a href='{{$siteName}}' style="text-decoration:none;color: white;">
+            <a href='{{$siteName}}verify-user?token={{$tokens}}&type={{$type}}&role_id={{$roleId}}' style="text-decoration:none;color: white;">
                 Verify Account</a></button>
         <h2>
             Thanks<br/>
