@@ -13,8 +13,10 @@ use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Lcobucci\JWT\Exception;
 
 class ProfileController extends Controller
 {
@@ -83,7 +85,7 @@ class ProfileController extends Controller
             "city" => "required",
             "zipcode" => "required",
         ]);
-        $siteName = Config::get('constants.url');
+
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors());
 
@@ -92,27 +94,63 @@ class ProfileController extends Controller
         $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
         if ($userProfile) {
-            $user->phone_no = $request->input("phone_number");
-            $user->update();
+            try {
+                DB::beginTransaction();
 
-            if ($request->has('user_profile_image')) {
-                if ($userProfile->profile_image != null) {
-                    $s3 = Storage::disk('s3');
-                    $s3->delete($userProfile->profile_image);
+                $user->phone_no = $request->input("phone_number");
+                $user->update();
+
+                if ($request->has('user_profile_image')) {
+                    if ($userProfile->profile_image != null) {
+                        $s3 = Storage::disk('s3');
+                        $s3->delete($userProfile->profile_image);
+                    }
+                    $profileImageFileName = time() . '.' . $request->file('user_profile_image')->getClientOriginalExtension();
+                    $profile_image = $request->file("user_profile_image");
+                    $profile_image->storeAs('user_profile_image', $profileImageFileName, 's3');
+                    $userProfile->profile_image = 'user_profile_image/' . $profileImageFileName;
                 }
-                $profileImageFileName = time() . '.' . $request->file('user_profile_image')->getClientOriginalExtension();
-                $profile_image = $request->file("user_profile_image");
-                $profile_image->storeAs('user_profile_image', $profileImageFileName, 's3');
-                $userProfile->profile_image = 'user_profile_image/' . $profileImageFileName;
+                $userProfile->address1 = $request->input("address1");
+                if ($request->has("address2")) {
+                    $userProfile->address2 = $request->input("address2");
+                }
+                $userProfile->city = $request->input("city");
+                $userProfile->zipcode = $request->input("zipcode");
+                $userProfile->update();
+                DB::commit();
+                return ResponseFormatter::successResponse("Personal info updated");
+            } catch (\Exception $exception) {
+                DB::rollback();
+                return ResponseFormatter::errorResponse("Error in profile creation");
             }
-            $userProfile->address1 = $request->input("address1");
-            if ($request->has("address2")) {
-                $userProfile->address2 = $request->input("address2");
+
+        } else {
+            return ResponseFormatter::errorResponse("No such user profile");
+        }
+    }
+
+    public function editProfileImage(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            "user_profile_image" => "required",
+        ]);
+
+        if ($validator->fails())
+            return ResponseFormatter::errorResponse($validator->errors());
+
+        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+
+        if ($userProfile) {
+            if ($userProfile->profile_image != null) {
+                $s3 = Storage::disk('s3');
+                $s3->delete($userProfile->profile_image);
             }
-            $userProfile->city = $request->input("city");
-            $userProfile->zipcode = $request->input("zipcode");
+            $profileImageFileName = time() . '.' . $request->file('user_profile_image')->getClientOriginalExtension();
+            $profile_image = $request->file("user_profile_image");
+            $profile_image->storeAs('user_profile_image', $profileImageFileName, 's3');
+            $userProfile->profile_image = 'user_profile_image/' . $profileImageFileName;
             $userProfile->update();
-            return ResponseFormatter::successResponse("Personal info updated");
+            return ResponseFormatter::successResponse("Profile image updated");
         } else {
             return ResponseFormatter::errorResponse("No such user profile");
         }

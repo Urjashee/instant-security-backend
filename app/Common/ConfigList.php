@@ -46,17 +46,23 @@ class ConfigList {
         }
     }
 
-    public static function postType($type): string
+    public static function jobType($type): string
     {
         switch($type) {
+            case(0):
+                return "Open Job";
+                break;
             case(1):
-                return "Public";
+                return "Upcoming Job";
                 break;
             case(2):
-                return "Friends-Only";
+                return "Completed Job";
                 break;
             case(3):
-                return "Anonymous";
+                return "Cancelled Job";
+                break;
+            case(4):
+                return "Ongoing Job";
                 break;
             default:
                 return 'Something went wrong.';

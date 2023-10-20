@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\FunctionHelpers\TwillioHelper;
 use App\Common\FunctionHelpers\UserFunctions;
 use App\Constants;
 use App\Common\ResponseFormatter;
@@ -20,8 +21,14 @@ class UserController extends Controller
 {
     public function sendEmail(): \Illuminate\Http\JsonResponse
     {
-        SendMail::dispatch('urja@simpalm.com', 'token123', 'http://localhost:3000');
-        return ResponseFormatter::successResponse("User added!");
+//        SendMail::dispatch('urja@simpalm.com', 'token123', 'http://localhost:3000');
+//        return ResponseFormatter::successResponse("User added!");
+        try {
+            TwillioHelper::sendSms();
+        } catch (\Exception $e) {
+            return ResponseFormatter::errorResponse($e->getMessage());
+        }
+        return ResponseFormatter::successResponse("SMS Sent!");
     }
 
     public function addNewUser(Request $request): \Illuminate\Http\JsonResponse

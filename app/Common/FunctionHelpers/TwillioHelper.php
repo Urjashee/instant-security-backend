@@ -8,8 +8,7 @@ use Twilio\Rest\Client;
 
 class TwillioHelper
 {
-
-    public static function genrateTokenForIdentity($identity,$serviceId)
+    public static function generateTokenForIdentity($identity,$serviceId): string
     {
         // Required for all Twilio access tokens
         $twilioAccountSid = Config::get('constants.twilio_access');
@@ -37,7 +36,7 @@ class TwillioHelper
         return $token->toJWT();
     }
 
-    public static function createConversation($frendlyName)
+    public static function createConversation($frendlyName): \Twilio\Rest\Conversations\V1\ConversationInstance
     {
         $sid = Config::get('constants.twilio_access');
         $token = Config::get('constants.twilio_secret');
@@ -51,8 +50,22 @@ class TwillioHelper
 
         return $conversation;
     }
+    public static function updateConversation($frendlyName,$chat): \Twilio\Rest\Conversations\V1\ConversationInstance
+    {
+        $sid = Config::get('constants.twilio_access');
+        $token = Config::get('constants.twilio_secret');
+        $twilio = new Client($sid, $token);
 
-    public static function getConversationWithSid($sid)
+        $conversation = $twilio->conversations->v1->conversations($chat)
+            ->update([
+                    "friendlyName" => $frendlyName
+                ]
+            );
+
+        return $conversation;
+    }
+
+    public static function getConversationWithSid($sid): \Twilio\Rest\Conversations\V1\ConversationInstance
     {
         $sid = Config::get('constants.twilio_access');
         $token = Config::get('constants.twilio_secret');
@@ -74,7 +87,7 @@ class TwillioHelper
             ->delete();
     }
 
-    public static function addChatParticipantToConversation($identity, $conversationSid)
+    public static function addChatParticipantToConversation($identity, $conversationSid): ?string
     {
         $sid = Config::get('constants.twilio_access');
         $token = Config::get('constants.twilio_secret');
@@ -90,7 +103,7 @@ class TwillioHelper
         return $participant->sid;
     }
 
-    public static function getChatParticipantDetails($conversationSid, $participantSid)
+    public static function getChatParticipantDetails($conversationSid, $participantSid): \Twilio\Rest\Conversations\V1\Conversation\ParticipantInstance
     {
         $sid = Config::get('constants.twilio_access');
         $token = Config::get('constants.twilio_secret');
@@ -103,7 +116,7 @@ class TwillioHelper
         return $participant;
     }
 
-    public static function deleteChatParticipantFromConversation($conversationSid, $participantSid)
+    public static function deleteChatParticipantFromConversation($conversationSid, $participantSid): bool
     {
         $sid = Config::get('constants.twilio_access');
         $token = Config::get('constants.twilio_secret');
@@ -114,6 +127,32 @@ class TwillioHelper
             ->delete();
 
         return $deleteUser;
+    }
+
+    public static function getServiceSid($identity): ?string
+    {
+        $sid = Config::get('constants.twilio_access');
+        $token = Config::get('constants.twilio_secret');
+        $twilio = new Client($sid, $token);
+
+        $services = $twilio->conversations->v1->services
+            ->create($identity);
+
+        return $services->sid;
+
+    }
+
+    public static function sendSms($phone_no,$text): \Twilio\Rest\Api\V2010\Account\MessageInstance
+    {
+        $sid = Config::get('constants.twilio_access');
+        $token = Config::get('constants.twilio_secret');
+        $twilio = new Client($sid, $token);
+        $data['from'] = Config::get('constants.twilio_phone');
+        $data['body'] = $text;
+        return $twilio->messages
+            ->create($phone_no,$data);
+
+//        return $message;
     }
 }
 

@@ -2,14 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\FunctionHelpers\JobFunctions;
+use App\Common\FunctionHelpers\TwillioHelper;
 use App\Common\ResponseFormatter;
+use App\Common\StringTemplate;
 use App\Constants;
+use App\Jobs\JobInformation;
+use App\Mail\JobInfo;
+use App\Models\ActivityReport;
+use App\Models\CustomerProfile;
 use App\Models\FireGuardLicense;
+use App\Models\IncidentReport;
+use App\Models\JobDetail;
 use App\Models\JobFireLicense;
 use App\Models\JobType;
+use App\Models\RejectedJobUser;
 use App\Models\SecurityJob;
 use App\Models\State;
+use App\Models\User;
+use App\Models\UserProfile;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class SecurityJobController extends Controller
@@ -33,15 +49,20 @@ class SecurityJobController extends Controller
             return ResponseFormatter::errorResponse($validator->errors());
 
         if (!State::where("id", $request->input("state_id"))
-            ->where("active",1)->first())
+            ->where("active", 1)->first())
             return ResponseFormatter::successResponse("Not a valid state_id");
 
-        if (!JobType::where("id", $request->input("state_id"))->first())
+        if (!JobType::where("id", $request->input("job_type_id"))->first())
             return ResponseFormatter::successResponse("Not a valid job_type_id");
 
-        $jobType = JobType::where("id",$request->input("job_type_id"))->first();
+        $jobType = JobType::where("id", $request->input("job_type_id"))->first();
 
         if ($jobType) {
+            try {
+                $conversation = TwillioHelper::createConversation($request->input("event_name"));
+            } catch (\Exception $e) {
+                return ResponseFormatter::errorResponse($e->getMessage());
+            }
             $newJobs = new SecurityJob();
             $newJobs->state_id = $request->input("state_id");
             $newJobs->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
@@ -57,9 +78,11 @@ class SecurityJobController extends Controller
             $newJobs->job_description = $request->input("job_description");
             $newJobs->price = $jobType->hourly_rate;
             $difference = $request->input("event_end") - $request->input("event_start");
-            $newJobs->max_price = ($difference/3600) * 10;
+            $newJobs->max_price = ($difference / 3600) * 10;
             $newJobs->price_paid = 0;
-            $newJobs->job_status = 1;
+            $newJobs->job_status = 0;
+            $newJobs->chat_sid = $conversation->sid;
+            $newJobs->chat_service_sid = $conversation->chatServiceSid;
             $newJobs->save();
             $newJobs->refresh();
             if ($request->has("fire_guard_license")) {
@@ -71,11 +94,442 @@ class SecurityJobController extends Controller
                     $fireGuard->save();
                 }
             }
-
-
             return ResponseFormatter::successResponse("Job successfully added!");
         } else {
             return ResponseFormatter::errorResponse("No such Job type");
+        }
+    }
+
+    public function getJobs(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $contentData = array();
+        $status = $request->query("status");
+
+        $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+            ->where("job_status", $status)
+            ->with('security_jobs')
+            ->get();
+        if ($jobs) {
+            foreach ($jobs as $job) {
+                $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status);
+                $contentData[] = $job_data;
+            }
+            return ResponseFormatter::successResponse("Jobs", $contentData);
+        } else {
+            return ResponseFormatter::errorResponse("Jobs list is empty");
+        }
+    }
+
+    public function getAllJobs(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $contentData = array();
+        $status = $request->query("status");
+
+        $jobs = SecurityJob::where("job_status", $status)
+            ->with('security_jobs')
+            ->get();
+        if ($jobs) {
+            foreach ($jobs as $job) {
+                $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status);
+                $contentData[] = $job_data;
+            }
+            return ResponseFormatter::successResponse("Jobs", $contentData);
+        } else {
+            return ResponseFormatter::errorResponse("Jobs list is empty");
+        }
+    }
+
+    public function getJobsById(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+        $contentData = array();
+        $jobDetailsData = array();
+        $fireGuardLicenseData = array();
+
+        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == 2) {
+            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), 2);
+            if (!$auth_user)
+                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        }
+
+        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == 3) {
+            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), 1);
+            if (!$auth_user)
+                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        }
+
+        $jobs = SecurityJob::where("id", $id)->first();
+        $job_details = JobDetail::where("job_id", $id)->first();
+        $fire_guard_licenses = JobFireLicense::where("job_id", $id)->get();
+
+        if ($jobs) {
+            if ($fire_guard_licenses) {
+                foreach ($fire_guard_licenses as $fire_guard_license) {
+                    $fire_guard_license_data = JobFunctions::jobFireLicense($fire_guard_license);
+                    $fireGuardLicenseData[] = $fire_guard_license_data;
+                }
+            }
+            if ($job_details) {
+                $job_detail_data = JobFunctions::jobAcceptedDetails($job_details);
+                $jobDetailsData = $job_detail_data;
+            }
+            $job_data = JobFunctions::jobDetails($jobs, $request->input(Constants::CURRENT_ROLE_ID_KEY), null);
+            $contentData = $job_data;
+            if ($request->input(Constants::CURRENT_ROLE_ID_KEY) != 3) {
+                $contentData += [
+                    "job_fire_guard_license" => $fireGuardLicenseData,
+                    "job_guard_details" => $jobDetailsData
+                ];
+            }
+            return ResponseFormatter::successResponse("Jobs", $contentData);
+        } else {
+            return ResponseFormatter::errorResponse("Jobs list is empty");
+        }
+    }
+
+    public function getOpenJobs(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $content_data = array();
+        $fire_licenses = array();
+        $job_lists = array();
+        $job_lists_unique = array();
+
+        $user = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+        $fire_guard_licenses = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
+
+        foreach ($fire_guard_licenses as $fire_guard_license) {
+            $fire_licenses[] = $fire_guard_license->fire_guard_license_type;
+        }
+        $jobsLicenses = JobFireLicense::select("*")
+            ->join("security_jobs", "security_jobs.id", "=", "job_fire_license.job_id")
+            ->where("security_jobs.osha_license_id", $user->osha_license_type)
+            ->where("security_jobs.job_status", 0)
+            ->get();
+        foreach ($jobsLicenses as $jobsLicense) {
+            if (in_array($jobsLicense->fire_guard_license_id, $fire_licenses)) {
+                $cancelled_job_users = RejectedJobUser::where("job_id", $jobsLicense->job_id)
+                    ->where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                    ->first();
+                if (!$cancelled_job_users) {
+                    $job_lists[] = $jobsLicense->job_id;
+                }
+            }
+        }
+
+        if ($job_lists != null) {
+            $job_lists_unique[] = array_unique($job_lists);
+            foreach ($job_lists_unique as $job_list) {
+                $jobs = SecurityJob::where("id", $job_list)
+                    ->where("state_id",$user->user->state_id)
+                    ->first();
+                $customer_profile = CustomerProfile::where("user_id", $jobs->user_id)->first();
+                $view_jobs_data = JobFunctions::viewJobs($jobs, $customer_profile, 0, null);
+                $content_data[] = $view_jobs_data;
+            }
+        }
+        return ResponseFormatter::successResponse("Job list", $content_data);
+    }
+
+    public function selectedJobs(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $content_data = array();
+        $status = 1;
+        if ($request->query("status")) {
+            $status = $request->query("status");
+        }
+        $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
+        if ($jobs) {
+            foreach ($jobs as $job) {
+                $customer_profile = CustomerProfile::where("user_id", $job->jobs->user_id)->first();
+                $view_jobs_data = JobFunctions::viewJobs($job->jobs, $customer_profile, $status, $job);
+                $content_data[] = $view_jobs_data;
+            }
+            return ResponseFormatter::successResponse("Jobs", $content_data);
+        } else {
+            return ResponseFormatter::errorResponse("No job records");
+        }
+    }
+
+    public function updateJobStatus(Request $request, $job_id, $status)
+    {
+        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+        if ($status == 1) {
+            $job = SecurityJob::where("id", $job_id)
+                ->where("job_status", 0)
+                ->first();
+
+            if ($job) {
+                if ($job->participant_id == null) {
+                    try {
+                        $participant = TwillioHelper::addChatParticipantToConversation($job->users->friendly_name, $job->chat_sid);
+                    } catch (\Exception $e) {
+                        return ResponseFormatter::errorResponse($e->getMessage());
+                    }
+
+                    $job->participant_id = $participant;
+                }
+                $job->job_status = 1;
+                $job->update();
+                $job_details = new JobDetail();
+                $job_details->job_id = $job->id;
+                $job_details->guard_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+                try {
+                    $participant_user = TwillioHelper::addChatParticipantToConversation($user->friendly_name, $job->chat_sid);
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage());
+                }
+                $job_details->participant_id = $participant_user;
+                $job_details->chat_sid = $job->chat_sid;
+                $job_details->save();
+
+                return ResponseFormatter::successResponse("Job has been updated");
+
+            } else {
+                return ResponseFormatter::errorResponse("Job has already been filled");
+            }
+        } elseif ($status == 3) {
+            $job = SecurityJob::where("id", $job_id)
+                ->where("job_status", "!=", 2)
+                ->first();
+            if ($job) {
+                try {
+                    TwillioHelper::deleteConversationWithSid($job->chat_sid);
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage());
+                }
+                $job->job_status = 3;
+                $job->chat_sid = null;
+                $job->chat_service_sid = null;
+                $job->participant_id = null;
+                $job->update();
+
+                $job_details = JobDetail::where("job_id", $job_id)->first();
+                $job_details->delete();
+
+//deleteConversationWithSid
+                return ResponseFormatter::successResponse("Job has been updated");
+
+            } else {
+                return ResponseFormatter::errorResponse("Job already started");
+            }
+        }
+    }
+
+    public function cancelJobs(Request $request, $job_id): \Illuminate\Http\JsonResponse
+    {
+        $email_data = array($request->input(Constants::CURRENT_EMAIL_KEY), Config::get('constants.super_admin_email'));
+
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), 1);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            try {
+                DB::beginTransaction();
+                $job = SecurityJob::where("id", $job_id)
+                    ->where("job_status", 1)
+                    ->first();
+
+                $job_details = JobDetail::where("job_id", $job_id)->first();
+                $cancelled_job_user = new RejectedJobUser();
+                try {
+                    $delete_participant = TwillioHelper::deleteChatParticipantFromConversation($job->chat_sid, $job_details->participant_id);
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage() . $job->chat_sid);
+                }
+                if ($delete_participant) {
+                    $job->job_status = 0;
+                    $cancelled_job_user->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+                    $cancelled_job_user->job_id = $job_id;
+                    $cancelled_job_user->save();
+                    $job->update();
+                    $job_details->delete();
+                }
+                DB::commit();
+                foreach ($email_data as $email) {
+                    JobInformation::dispatch(
+                        $email,
+                        StringTemplate::typeMessage(1, $job->event_name, $request->input(Constants::CURRENT_FIRST_NAME_KEY),$job_id),
+                    );
+                }
+                return ResponseFormatter::successResponse("Job cancelled");
+            } catch (\Exception $exception) {
+                DB::rollback();
+                return ResponseFormatter::errorResponse("Error in cancelling job");
+            }
+        }
+    }
+
+    public function cancelJobsCreated(Request $request, $job_id): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), 2);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $job = SecurityJob::where("id", $job_id)
+                ->where("job_status", 1)
+                ->first();
+            if ($job->security_jobs->clock_in_request_accepted == 0) {
+                try {
+                    TwillioHelper::deleteConversationWithSid($job->chat_sid);
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage());
+                }
+                $job->security_jobs->chat_sid = null;
+                $job->security_jobs->participant_id = null;
+
+                $job->job_status = 3;
+                $job->chat_sid = null;
+                $job->chat_service_sid = null;
+                $job->participant_id = null;
+                $job->security_jobs->update();
+                $job->update();
+                return ResponseFormatter::successResponse("Job cancelled successfully");
+            } else {
+                return ResponseFormatter::errorResponse("Can't cancel once the job has started");
+            }
+        }
+    }
+
+    public function clockInRequest(Request $request, $job_id): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), 1);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $job = SecurityJob::where("id", $job_id)->first();
+            $time1 = Carbon::createFromTimestamp($request->input("clock_in_time"));
+            $time2 = Carbon::createFromTimestamp($job->event_start);
+            if ($time2->diffInMinutes($time1) <= 30) {
+                $job_details = JobDetail::where("job_id", $job_id)->first();
+                $job_details->clock_in_request = 1;
+                $job_details->clock_in_time = $request->input("clock_in_time");
+                $job_details->clock_in_latitude = $request->input("clock_in_latitude");
+                $job_details->clock_in_longitude = $request->input("clock_in_longitude");
+                $job_details->update();
+                JobInformation::dispatch(
+                    $job->users->email,
+                    StringTemplate::typeMessage(2, $job->event_name, null,$job->id),
+                );
+                try {
+                    TwillioHelper::sendSms($job->users->phone_no,
+                        StringTemplate::typeMessage(2, $job->event_name, null,$job->id));
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse("Clock-in request sent but message couldn't be delivered");
+                }
+
+                return ResponseFormatter::successResponse("Clock-in request sent");
+            } else {
+                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes");
+            }
+        }
+    }
+
+    public function clockInResponse(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), 2);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $job_details = JobDetail::where("job_id", $job_id)->first();
+            if ($approval == 0) {
+                $job_details->clock_in_request = 0;
+                $job_details->clock_in_time = null;
+                $job_details->clock_in_latitude = null;
+                $job_details->clock_in_longitude = null;
+                $job_details->update();
+                return ResponseFormatter::successResponse("Clock-in rejected");
+            }
+            if ($approval == 1) {
+                $job_details->clock_in_request_accepted = 1;
+                $job_details->update();
+                return ResponseFormatter::successResponse("Clock-in accepted");
+            }
+        }
+    }
+
+    public function clockOutRequest(Request $request, $job_id): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), 1);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $job_details = JobDetail::where("job_id", $job_id)
+                ->where("clock_in_request_accepted",1)
+                ->first();
+            if ($job_details) {
+                $job_details->clock_out_request = 1;
+                $job_details->clock_out_time = $request->input("clock_out_time");
+                $job_details->clock_out_latitude = $request->input("clock_out_latitude");
+                $job_details->clock_out_longitude = $request->input("clock_out_longitude");
+                $job_details->update();
+                if ($request->has('activity_report')) {
+//                $activityReport = json_decode($request->input('activity_report'));
+                    foreach ($request->input('activity_report') as $key => $value) {
+                        $activity = new ActivityReport();
+                        $activity->job_id = $job_id;
+                        $activity->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+                        $activity->message = $value["message"];
+                        $activity->timestamp = $value["timestamp"];
+                        $activityFileName = time() . '.' . $request->file("activity_report.$key.activity_report_image")->getClientOriginalExtension();
+                        $activity_report_image = $request->file("activity_report.$key.activity_report_image");
+                        $activity_report_image->storeAs('activity_report_image', $activityFileName, 's3');
+                        $activity->image = 'activity_report_image/' . $activityFileName;
+                        $activity->save();
+                    }
+                }
+            JobInformation::dispatch(
+                $job_details->users->email,
+                StringTemplate::typeMessage(3, $job_details->jobs->event_name, null,$job_details->job_id),
+            );
+            try {
+                TwillioHelper::sendSms($job_details->users->phone_no,
+                    StringTemplate::typeMessage(3, $job_details->jobs->event_name, null,$job_details->job_id));
+            } catch (\Exception $e) {
+                return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
+            }
+                return ResponseFormatter::successResponse("Clock-out request sent");
+            } else {
+                return ResponseFormatter::errorResponse("Can't clock-out");
+            }
+        }
+    }
+
+    public function clockOutResponse(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), 2);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $job_details = JobDetail::where("job_id", $job_id)->first();
+            if ($approval == 0) {
+                $job_details->clock_out_request = 0;
+                $job_details->clock_out_time = null;
+                $job_details->update();
+                return ResponseFormatter::successResponse("Clock-out rejected");
+            }
+            if ($approval == 1) {
+                $job_details->clock_out_request_accepted = 1;
+                $job_details->update();
+                return ResponseFormatter::successResponse("Clock-out accepted");
+            }
+        }
+    }
+    public function addIncidentReport(Request $request, $job_id): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), 1);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $incident_report = new IncidentReport();
+            $incident_report->job_id = $job_id;
+            $incident_report->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+            $incident_report->name = $request->input("name");
+            $incident_report->message = $request->input("message");
+            $imageFileName = time() . '.' . $request->file('incident_image')->getClientOriginalExtension();
+            $profile_image = $request->file("incident_image");
+            $profile_image->storeAs('incident_image', $imageFileName, 's3');
+            $incident_report->image = 'incident_image/' . $imageFileName;
+            $incident_report->save();
+            return ResponseFormatter::successResponse("Incident report added");
         }
     }
 }

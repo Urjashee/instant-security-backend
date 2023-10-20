@@ -13,4 +13,9 @@ class JobFireLicense extends Model
 {
     use HasFactory;
     protected $table = "job_fire_license";
+    protected $with = ["fire_license"];
+    public function fire_license()
+    {
+        return $this->belongsTo(Firearms::class, "fire_guard_license_id");
+    }
 }

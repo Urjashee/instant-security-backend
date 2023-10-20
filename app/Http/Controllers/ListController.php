@@ -17,6 +17,7 @@ class ListController extends Controller
         $fireArmsList = array();
         $oshaList = array();
         $dayList = array();
+        $jobList = array();
         $states = State::where("active",1)->get();
         $fireArms = Firearms::all();
         if ($states) {
@@ -24,6 +25,7 @@ class ListController extends Controller
                 $stateList[] = [
                     'id' => $state->id,
                     'name' => $state->name,
+                    'fire_guard_license' => $state->fire_guard_license == 1 ? true : false,
                 ];
             }
         }
@@ -41,10 +43,16 @@ class ListController extends Controller
                 'name' => ConfigList::oshaType($osha),
             ];
         }
-        for ($days = 1; $days <= 2; $days++) {
+        for ($days = 0; $days <= 6; $days++) {
             $dayList[] = [
                 'id' => $days,
                 'name' => ConfigList::dayString($days),
+            ];
+        }
+        for ($jobs = 1; $jobs <= 4; $jobs++) {
+            $jobList[] = [
+                'id' => $jobs,
+                'name' => ConfigList::jobType($jobs),
             ];
         }
         $allList = [
@@ -52,6 +60,7 @@ class ListController extends Controller
             'fire_arms' => $fireArmsList,
             'osha' => $oshaList,
             'day_of_week' => $dayList,
+            'job_type' => $jobList,
         ];
         return ResponseFormatter::successResponse("", $allList);
     }

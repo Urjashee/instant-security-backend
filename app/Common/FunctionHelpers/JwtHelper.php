@@ -38,7 +38,8 @@ class JwtHelper
             ->set("lastname", $user->last_name)
             ->set("role_id", $user->role->id)
             ->set("role_name", $user->role->name)
-            ->set("profile_exist", $user->profile);
+            ->set("profile_exist", $user->profile)
+            ->set("friendly_name", $user->friendly_name);
         return $token = $builder
             ->sign($signer, Config::get("jwt.secret"))
             ->getToken();

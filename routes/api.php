@@ -30,31 +30,44 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
 
     Route::group(["middleware" => ["rbac:user"]], function () {
         Route::group(['prefix' => '/user'], function () {
-            Route::get("/profile-check-list", [\App\Http\Controllers\ProfileController::class, 'filledProfileList']);
-            Route::post("/edit-profile", [\App\Http\Controllers\ProfileController::class, 'editUserProfile']);
-
-            Route::post("/add-personal-info", [\App\Http\Controllers\ProfileController::class, 'addPersonal']);
-            Route::post("/edit-personal-info", [\App\Http\Controllers\ProfileController::class, 'editPersonal']);
-
-            Route::post("/add-state-license", [\App\Http\Controllers\ProfileController::class, 'addStateLicense']);
-            Route::post("/edit-state-license", [\App\Http\Controllers\ProfileController::class, 'editStateLicense']);
-
-            Route::put("/edit-bank-information", [\App\Http\Controllers\ProfileController::class, 'addBanking']);
-
-            Route::patch("/terms-and-condition", [\App\Http\Controllers\ProfileController::class, 'addDocument']);
-
-            Route::get("/profile", [\App\Http\Controllers\ProfileController::class, 'getUserProfile']);
+            Route::group(['prefix' => '/profile'], function () {
+                Route::get("/", [\App\Http\Controllers\ProfileController::class, 'getUserProfile']);
+                Route::get("/check-list", [\App\Http\Controllers\ProfileController::class, 'filledProfileList']);
+                Route::post("/edit", [\App\Http\Controllers\ProfileController::class, 'editUserProfile']);
+                Route::post("/image", [\App\Http\Controllers\ProfileController::class, 'editProfileImage']);
+                Route::post("/personal-info/add", [\App\Http\Controllers\ProfileController::class, 'addPersonal']);
+                Route::post("/personal-info/edit", [\App\Http\Controllers\ProfileController::class, 'editPersonal']);
+                Route::post("/state-license/add", [\App\Http\Controllers\ProfileController::class, 'addStateLicense']);
+                Route::post("/state-license/edit", [\App\Http\Controllers\ProfileController::class, 'editStateLicense']);
+                Route::put("/bank-information/edit", [\App\Http\Controllers\ProfileController::class, 'addBanking']);
+                Route::patch("/terms-and-condition", [\App\Http\Controllers\ProfileController::class, 'addDocument']);
+            });
+            Route::group(['prefix' => '/jobs'], function () {
+                Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'selectedJobs']);
+                Route::get("/view/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
+                Route::get("/open", [\App\Http\Controllers\SecurityJobController::class, 'getOpenJobs']);
+                Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobs']);
+                Route::patch("/update/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'updateJobStatus']);
+                Route::patch("/clock-in-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockInRequest']);
+                Route::post("/clock-out-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutRequest']);
+                Route::post("/incident-report/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'addIncidentReport']);
+            });
         });
-
     });
 
-    Route::group(["middleware" => ["rbac:customer"]], function () {
+    Route::group(["middleware" => ["rbac:customer,super_admin"]], function () {
         Route::group(['prefix' => '/web'], function () {
-            Route::post("/edit-profile", [\App\Http\Controllers\ProfileController::class, 'editCustomerProfile']);
+            Route::post("/profile/edit", [\App\Http\Controllers\ProfileController::class, 'editCustomerProfile']);
             Route::get("/profile", [\App\Http\Controllers\ProfileController::class, 'getCustomerProfile']);
-            Route::post("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'addJobs']);
+            Route::group(['prefix' => '/jobs'], function () {
+                Route::post("/", [\App\Http\Controllers\SecurityJobController::class, 'addJobs']);
+                Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'getJobs']);
+                Route::get("/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
+                Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobsCreated']);
+                Route::patch("/clock-in-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockInResponse']);
+                Route::patch("/clock-out-response/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
+            });
         });
-
     });
 
     Route::group(["middleware" => ["rbac:super_admin"]], function () {
@@ -65,6 +78,9 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
             Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
 
             Route::patch("/state/{id}", [\App\Http\Controllers\StateController::class, 'changeStateStatus']);
+
+            Route::get("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'getAllJobs']);
+            Route::get("/jobs/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
         });
     });
 
