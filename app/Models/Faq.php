@@ -5,12 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Firearms extends Model
+/**
+ * @property mixed $question
+ * @property mixed $answer
+ */
+class Faq extends Model
 {
     use HasFactory;
-
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-    ];
 }

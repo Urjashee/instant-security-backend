@@ -23,6 +23,7 @@ class ProfileController extends Controller
     public function filledProfileList(Request $request): \Illuminate\Http\JsonResponse
     {
         $contentData = array();
+        $profile_image_details = 0;
         $personal_details = 0;
         $state_license = 0;
         $personal_payment = 0;
@@ -32,7 +33,11 @@ class ProfileController extends Controller
         $fireLicenses = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($userProfile) {
             if (
-                $userProfile->profile_image != null &&
+                $userProfile->profile_image != null
+            ) {
+                $profile_image_details = 1;
+            }
+            if (
                 $userProfile->ssc_image != null &&
                 $userProfile->govt_id_image != null &&
                 $userProfile->govt_id_expiry_date != null
@@ -65,10 +70,11 @@ class ProfileController extends Controller
                 }
             }
             $contentData = [
-                "personal_ids" => $personal_details,
-                "state_license" => $state_license,
-                "payment_profile" => $personal_payment,
-                "document" => $document,
+                "is_image" => $profile_image_details,
+                "is_personal_ids" => $personal_details,
+                "is_state_license" => $state_license,
+                "is_payment_profile" => $personal_payment,
+                "is_document" => $document,
             ];
 
             return ResponseFormatter::successResponse("Profile Check list", $contentData);
@@ -294,6 +300,10 @@ class ProfileController extends Controller
             if ($request->has('cpr_certificate_expiry')) {
                 $stateLicense->cpr_certificate_expiry = $request->input("cpr_certificate_expiry");
             }
+
+            if ($request->has('fire_guard_license')) {
+                // TODO
+            }
             $stateLicense->update();
 
 
@@ -479,6 +489,36 @@ class ProfileController extends Controller
             return ResponseFormatter::successResponse("Web Profile", $contentData);
         } else {
             return ResponseFormatter::errorResponse("Profile not found");
+        }
+    }
+
+    public function deleteStateLicense(Request $request, $state_id): \Illuminate\Http\JsonResponse
+    {
+        $s3 = Storage::disk('s3');
+        $stateLicense = StateLicense::
+//        where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+        where("user_id", 2)
+            ->where("state_id", $state_id)
+            ->first();
+
+        if ($stateLicense) {
+            $fireLicenses = FireGuardLicense::
+//            where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+            where("user_id", 2)
+                ->where("state_id", $state_id)
+                ->get();
+            if ($fireLicenses) {
+                foreach ($fireLicenses as $fireLicense) {
+                    $s3->delete($fireLicense->fire_guard_license_image);
+                    $fireLicense->delete();
+                }
+            }
+            $s3->delete($stateLicense->security_guard_license_image);
+            $s3->delete($stateLicense->cpr_certificate_image);
+            $stateLicense->delete();
+            return ResponseFormatter::successResponse("State license deleted ");
+        } else {
+            return ResponseFormatter::errorResponse("No tate licence found for this user with this state");
         }
     }
 }

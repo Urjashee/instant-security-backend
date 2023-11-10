@@ -38,13 +38,7 @@ class LoginController extends Controller
             if (Hash::check($request->input("password"), $user->password)) {
                 list($token, $refreshToken) = UserFunctions::generateToken($user);
 
-                $newDeviceToken = new DeviceTokens();
-                $newDeviceToken->user_id = $user->id;
-                $newDeviceToken->device_uuid = $request->input("device_uuid");
-                if ($request->has('device_token')) {
-                    $newDeviceToken->device_token = $request->input("device_token");
-                }
-                $newDeviceToken->save();
+                $this->deviceToken($user, $request, $token);
 
                 return ResponseFormatter::successResponse("Login successful.",
                     array("access_token" => (string)$token, "refresh_token" => (string)$refreshToken));
@@ -136,5 +130,17 @@ class LoginController extends Controller
         else {
             return ResponseFormatter::errorResponse( "Cannot log out");
         }
+    }
+
+    private function deviceToken($user, $request, $token) {
+        $newDeviceToken = new DeviceTokens();
+        $newDeviceToken->user_id = $user->id;
+        $newDeviceToken->device_uuid = $request->input("device_uuid");
+        $newDeviceToken->device_type = $request->input("device_type");
+        $newDeviceToken->token = $token;
+        if ($request->has('device_token')) {
+            $newDeviceToken->device_token = $request->input("device_token");
+        }
+        $newDeviceToken->save();
     }
 }

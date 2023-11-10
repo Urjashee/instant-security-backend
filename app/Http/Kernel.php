@@ -5,6 +5,7 @@ namespace App\Http;
 use App\Http\Middleware\CheckRefreshTokenMiddleware;
 use App\Http\Middleware\JwtAuthMiddleware;
 use App\Http\Middleware\RoleBasedMiddleware;
+use App\Http\Middleware\StatusCheckMiddleware;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -69,5 +70,6 @@ class Kernel extends HttpKernel
         "jwt.verify" => JwtAuthMiddleware::class,
         "check_refresh_token" => CheckRefreshTokenMiddleware::class,
         "rbac" => RoleBasedMiddleware::class,
+        "status.check" => StatusCheckMiddleware::class,
     ];
 }

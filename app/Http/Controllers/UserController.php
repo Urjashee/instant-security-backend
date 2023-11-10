@@ -8,14 +8,15 @@ use App\Constants;
 use App\Common\ResponseFormatter;
 use App\Jobs\SendMail;
 use App\Models\CustomerProfile;
-use App\Models\PasswordReset;
 use App\Models\Roles;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
+
 
 class UserController extends Controller
 {
@@ -122,40 +123,6 @@ class UserController extends Controller
         }
     }
 
-    public function verifyAccount(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            "token" => "required",
-        ]);
-
-        if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
-
-        $token = PasswordReset::where("token", $request->input("token"))->first();
-        if (!$token) {
-            return ResponseFormatter::errorResponse('Incorrect token or type');
-        } else {
-            $email = $token->email;
-            $id = $token->id;
-            $user = User::where("email", $email)->first();
-            if (!$user)
-                return ResponseFormatter::errorResponse('User not found!');
-            else {
-                if ($user) {
-                    $user->active = 1;
-                    $user->email_verified_at = Carbon::now()->toDateTimeString();
-                    $user->update();
-                    $tokenData = PasswordReset::where("id", $id)->first();
-                    $tokenData->active_token = 1;
-                    $tokenData->update();
-                    return ResponseFormatter::successResponse("Account verified!");
-                } else {
-                    return ResponseFormatter::errorResponse('Account not verified!');
-                }
-            }
-        }
-    }
-
     public function getUser($id): \Illuminate\Http\JsonResponse
     {
         $user = User::where("id", $id)->first();
@@ -170,7 +137,6 @@ class UserController extends Controller
     {
         $roles = Roles::all();
         return ResponseFormatter::successResponse("Role detail.", $roles);
-        //return response()->json(["success" => true, "status" => "ok", "data" => $roles]);
     }
 
     public function getAllUsers(): \Illuminate\Http\JsonResponse
@@ -190,6 +156,24 @@ class UserController extends Controller
     {
         $user = User::where("email", $request->input(Constants::CURRENT_EMAIL_KEY))->first();
         return ResponseFormatter::successResponse("Current user detail found.", $user);
+    }
+
+    public function deleteUser(Request $request) {
+        $user = User::where("id", $request->input(Constants::CURRENT_ROLE_ID_KEY))->first();
+        DB::beginTransaction();
+
+        $user->email = Constants::TEST_EMAIL;
+        $user->first_name = Constants::TEST_FIRST_NAME;
+        $user->last_name = Constants::TEST_LAST_NAME;
+        $user->phone_no = Constants::TEST_PHONE;
+        $user->status = Constants::DELETED;
+        $user->update();
+
+    }
+    public function deactivateUser(Request $request): \Illuminate\Http\JsonResponse
+    {
+
+        return ResponseFormatter::successResponse("User deactivated");
     }
 }
 

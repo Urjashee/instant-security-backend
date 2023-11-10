@@ -4,17 +4,24 @@ namespace App\Common\FunctionHelpers;
 
 
 use App\Common\ConfigList;
+use App\Constants;
 use App\Models\ActivityReport;
+use App\Models\FireGuardLicense;
 use App\Models\IncidentReport;
 use App\Models\JobDetail;
 use App\Models\SecurityJob;
+use App\Models\StateLicense;
+use App\Models\User;
+use App\Models\UserProfile;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
+use PHPUnit\TextUI\XmlConfiguration\Constant;
 
 class JobFunctions
 {
     public static function authenticateUser($job_id, $user, $type)
     {
-        if ($type == 1) {
+        if ($type == Constants::MOBILE_USER) {
             $job = JobDetail::where("guard_id", $user)
                 ->where("job_id", $job_id)
                 ->first();
@@ -24,7 +31,7 @@ class JobFunctions
                 return (false);
             }
         }
-        if ($type == 2) {
+        if ($type == Constants::WEB_USER) {
             $job = SecurityJob::where("user_id", $user)
                 ->where("id", $job_id)
                 ->first();
@@ -32,6 +39,72 @@ class JobFunctions
                 return (true);
             } else {
                 return (false);
+            }
+        }
+    }
+
+    public static function checkUserStatus($user_id): bool
+    {
+        $user = User::where("id",$user_id)->first();
+        if($user->status == 1) {
+            return (true);
+        } else {
+            return (false);
+        }
+    }
+    public static function nextJobStatus($user_id, $job_id): bool
+    {
+        $job = SecurityJob::where("id",$job_id)->first();
+        if($job) {
+            $time1 = Carbon::createFromTimestamp($job->event_start);
+            $jobDetails = JobDetail::where("guard_id",$user_id)->get();
+            foreach ($jobDetails as $jobDetail) {
+                $time2 = Carbon::createFromTimestamp($jobDetail->jobs->event_start);
+
+                if ($time2->diffInMinutes($time1) <= 240) {
+                    return (false);
+                } else {
+                    return (true);
+                }
+            }
+        } else {
+            return (true);
+        }
+    }
+    public static function licenceExpiry($user_id, $job_id): bool
+    {
+        $job = SecurityJob::where("id",$job_id)->first();
+        if($job) {
+            $personalLicense = UserProfile::where("user_id", $user_id)->first();
+            if ($personalLicense) {
+//                $govt_id_expiry = Carbon::createFromTimestamp($personalLicense->govt_id_expiry_date);
+//                $osha_license_expiry = Carbon::createFromTimestamp($personalLicense->osha_license_expiry_date);
+                if (($personalLicense->govt_id_expiry_date < $job->event_start) ||
+                    ($personalLicense->osha_license_expiry_date < $job->event_start)) {
+                    return (false);
+                }
+            }
+            $stateLicense = StateLicense::where("user_id", $user_id)->first();
+            if ($stateLicense) {
+//                $security_guard_license_expiry = Carbon::createFromTimestamp($stateLicense->security_guard_license_expiry);
+//                $cpr_certificate_expiry = Carbon::createFromTimestamp($stateLicense->cpr_certificate_expiry);
+                if (($stateLicense->security_guard_license_expiry < $job->event_start) ||
+                    ($stateLicense->cpr_certificate_expiry < $job->event_start)) {
+                    return (false);
+                }
+            }
+            $fireLicenses = FireGuardLicense::where("user_id", $user_id)
+                ->where("state_id",$job->state_id)
+                ->first();
+            if ($fireLicenses) {
+                foreach ($fireLicenses as $fireLicense) {
+//                    $fire_guard_license_expiry = Carbon::createFromTimestamp($fireLicense->fire_guard_license_expiry);
+                    if (($fireLicense->fire_guard_license_expiry < $job->event_start)) {
+                        return (false);
+                    }
+                }
+            } else {
+                return (true);
             }
         }
     }

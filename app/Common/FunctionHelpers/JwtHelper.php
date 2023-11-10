@@ -32,13 +32,14 @@ class JwtHelper
         $signer = new Sha512();
         $builder
             ->setIssuedAt(time())
+//            ->setExpiration(time() + Config::get('constants.jwt_ttl'))
             ->set("user_id", $user->id)
             ->set("email", $user->email)
             ->set("firstname", $user->first_name)
             ->set("lastname", $user->last_name)
             ->set("role_id", $user->role->id)
             ->set("role_name", $user->role->name)
-            ->set("profile_exist", $user->profile)
+            ->set("user_status", $user->status)
             ->set("friendly_name", $user->friendly_name);
         return $token = $builder
             ->sign($signer, Config::get("jwt.secret"))

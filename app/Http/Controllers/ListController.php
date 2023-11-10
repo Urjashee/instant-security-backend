@@ -64,4 +64,13 @@ class ListController extends Controller
         ];
         return ResponseFormatter::successResponse("", $allList);
     }
+    public function getFireArms($state_id): \Illuminate\Http\JsonResponse
+    {
+        $fireArms = Firearms::all();
+        if ($fireArms) {
+            return ResponseFormatter::successResponse("Fire arms", $fireArms);
+        } else {
+            return ResponseFormatter::errorResponse("No fire arms");
+        }
+    }
 }
