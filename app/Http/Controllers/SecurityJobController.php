@@ -486,8 +486,8 @@ class SecurityJobController extends Controller
             if ($job_details) {
                 $job_details->clock_out_request = Constants::ACCEPTED;
                 $job_details->clock_out_time = $request->input("clock_out_time");
-                $job_details->clock_out_latitude = $request->input("clock_out_latitude");
-                $job_details->clock_out_longitude = $request->input("clock_out_longitude");
+                $job_details->clock_out_latitude = $request->input("latitude");
+                $job_details->clock_out_longitude = $request->input("longitude");
                 $job_details->update();
 //                if ($request->has('activity_report')) {
 ////                $activityReport = json_decode($request->input('activity_report'));
@@ -554,8 +554,8 @@ class SecurityJobController extends Controller
             $incident_report = new IncidentReport();
             $incident_report->job_id = $job_id;
             $incident_report->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
-            $incident_report->name = $request->input("name");
-            $incident_report->message = $request->input("message");
+            $incident_report->name = $request->input("incident_name");
+            $incident_report->message = $request->input("incident_message");
             $imageFileName = time() . '.' . $request->file('incident_image')->getClientOriginalExtension();
             $profile_image = $request->file("incident_image");
             $profile_image->storeAs('incident_image', $imageFileName, 's3');

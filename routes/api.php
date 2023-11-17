@@ -49,7 +49,6 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                 Route::put("/bank-information/edit", [\App\Http\Controllers\ProfileController::class, 'addBanking']);
                 Route::patch("/terms-and-condition", [\App\Http\Controllers\ProfileController::class, 'addDocument']);
             });
-//            Route::group(["middleware" => ["status.check:1"]], function () {
             Route::group(['prefix' => '/jobs'], function () {
                 Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'selectedJobs']);
                 Route::get("/view/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
@@ -62,8 +61,8 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                 Route::post("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'addActivityReport']);
                 Route::get("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'getActivityReport']);
             });
-//            });
         });
+        Route::get("/chat/token/{job_id}", [\App\Http\Controllers\ChatController::class, 'getToken']);
     });
 
     Route::group(["middleware" => ["rbac:customer,super_admin"]], function () {

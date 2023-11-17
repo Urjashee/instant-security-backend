@@ -15,8 +15,8 @@ class ActivityReportController extends Controller
     public function addActivityReport(Request $request, $job_id): \Illuminate\Http\JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            "message" => "required",
-            "timestamp" => "required",
+            "activity_log_message" => "required",
+            "activity_log_timestamp" => "required",
             "activity_log_image" => "required",
         ]);
 
@@ -30,8 +30,8 @@ class ActivityReportController extends Controller
         $activity = new ActivityReport();
         $activity->job_id = $job_id;
         $activity->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
-        $activity->message = $request->input("message");
-        $activity->timestamp = $request->input("timestamp");
+        $activity->message = $request->input("activity_log_message");
+        $activity->timestamp = $request->input("activity_log_timestamp");
         $activityFileName = time() . '.' . $request->file("activity_log_image")->getClientOriginalExtension();
         $activity_log_image = $request->file("activity_log_image");
         $activity_log_image->storeAs('activity_log_image', $activityFileName, 's3');

@@ -70,7 +70,7 @@ class ProfileController extends Controller
                 }
             }
             $contentData = [
-                "is_image" => $profile_image_details,
+                "is_profile_image" => $profile_image_details,
                 "is_personal_ids" => $personal_details,
                 "is_state_license" => $state_license,
                 "is_payment_profile" => $personal_payment,
