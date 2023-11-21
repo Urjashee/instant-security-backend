@@ -30,6 +30,7 @@ class Constants
     const DENIED = 0;
     const ACTIVE = 1;
     const INACTIVE = 0;
+    const REJECTED = 2;
     const DELETED = 2;
     const TEST_EMAIL = "--test@test.com__";
     const TEST_FIRST_NAME = "--first name__";

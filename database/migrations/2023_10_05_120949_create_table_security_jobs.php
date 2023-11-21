@@ -23,8 +23,8 @@ class CreateTableSecurityJobs extends Migration
             $table->text("street2")->nullable(true);
             $table->string("city",100);
             $table->string("zipcode",10);
-            $table->integer("event_start");
-            $table->integer("event_end");
+            $table->string("event_start",11);
+            $table->string("event_end",11);
             $table->integer("osha_license_id")->nullable();
             $table->text("job_description");
             $table->float("price", 5,2);

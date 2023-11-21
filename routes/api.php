@@ -30,9 +30,7 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
     Route::get("/list/firearms/{id}", [\App\Http\Controllers\ListController::class, 'getFireArms']);
     //Faqs
     Route::group(['prefix' => '/faq'], function () {
-        Route::post("/", [\App\Http\Controllers\FaqController::class, 'addFaqs']);
         Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
-        Route::patch("/{id}", [\App\Http\Controllers\FaqController::class, 'updateFaqs']);
     });
 
     Route::group(["middleware" => ["rbac:user"]], function () {
@@ -60,11 +58,13 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                 Route::post("/incident-report/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'addIncidentReport']);
                 Route::post("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'addActivityReport']);
                 Route::get("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'getActivityReport']);
+                Route::post("/response-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'responseMoreTime']);
             });
         });
+    });
+    Route::group(["middleware" => ["rbac:customer,user"]], function () {
         Route::get("/chat/token/{job_id}", [\App\Http\Controllers\ChatController::class, 'getToken']);
     });
-
     Route::group(["middleware" => ["rbac:customer,super_admin"]], function () {
         Route::group(['prefix' => '/web'], function () {
             Route::post("/profile/edit", [\App\Http\Controllers\ProfileController::class, 'editCustomerProfile']);
@@ -75,7 +75,8 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                 Route::get("/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
                 Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobsCreated']);
                 Route::patch("/clock-in-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockInResponse']);
-                Route::patch("/clock-out-response/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
+                Route::patch("/clock-out-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
+                Route::post("/request-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'requestMoreTime']);
             });
             Route::group(['prefix' => '/payment'], function () {
                 Route::get("/ephemeral-key", [\App\Http\Controllers\PaymentController::class, 'getEphemeralKey']);
@@ -100,6 +101,11 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
 
             Route::get("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'getAllJobs']);
             Route::get("/jobs/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
+            Route::group(['prefix' => '/faq'], function () {
+                Route::post("/", [\App\Http\Controllers\FaqController::class, 'addFaqs']);
+                Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
+                Route::patch("/{id}", [\App\Http\Controllers\FaqController::class, 'updateFaqs']);
+            });
         });
     });
 

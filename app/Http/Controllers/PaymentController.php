@@ -21,7 +21,7 @@ class PaymentController extends Controller
             $setupIntent = StripeHelper::createSetupIntent($customer_profile->customer_id);
             $paymentEphemeralKey = StripeHelper::paymentEphemeralKey($customer_profile->customer_id);
             $contentsDecoded = [
-                "setup_intent" => $setupIntent->id,
+//                "setup_intent" => $setupIntent->id,
                 "setup_intent_client_secret" => $setupIntent->client_secret,
                 "ephemeral_key" => $paymentEphemeralKey->secret,
                 "customer_id" => $customer_profile->customer_id,

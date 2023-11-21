@@ -81,11 +81,14 @@ class SecurityJobController extends Controller
                     $newJobs->zipcode = $request->input("zipcode");
                     $newJobs->event_start = $request->input("event_start");
                     $newJobs->event_end = $request->input("event_end");
+                    $time1 = Carbon::createFromTimestamp($request->input("event_end"));
+                    $time2 = Carbon::createFromTimestamp($request->input("event_start"));
+                    $newJobs->total_hours = $time2->diffInMinutes($time1) / 60;
                     $newJobs->osha_license_id = $request->input("osha_license_id");
                     $newJobs->job_description = $request->input("job_description");
                     $newJobs->price = $jobType->hourly_rate;
                     $difference = $request->input("event_end") - $request->input("event_start");
-                    $newJobs->max_price = ($difference / 3600) * 10;
+                    $newJobs->max_price = ($difference / 3600) * $jobType->hourly_rate;
                     $newJobs->price_paid = 0;
                     $newJobs->job_status = 0;
                     $newJobs->chat_sid = $conversation->sid;
@@ -484,37 +487,12 @@ class SecurityJobController extends Controller
                 ->where("clock_in_request_accepted", Constants::ACCEPTED)
                 ->first();
             if ($job_details) {
-                $job_details->clock_out_request = Constants::ACCEPTED;
-                $job_details->clock_out_time = $request->input("clock_out_time");
-                $job_details->clock_out_latitude = $request->input("latitude");
-                $job_details->clock_out_longitude = $request->input("longitude");
-                $job_details->update();
-//                if ($request->has('activity_report')) {
-////                $activityReport = json_decode($request->input('activity_report'));
-//                    foreach ($request->input('activity_report') as $key => $value) {
-//                        $activity = new ActivityReport();
-//                        $activity->job_id = $job_id;
-//                        $activity->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
-//                        $activity->message = $value["message"];
-//                        $activity->timestamp = $value["timestamp"];
-//                        $activityFileName = time() . '.' . $request->file("activity_report.$key.activity_report_image")->getClientOriginalExtension();
-//                        $activity_report_image = $request->file("activity_report.$key.activity_report_image");
-//                        $activity_report_image->storeAs('activity_report_image', $activityFileName, 's3');
-//                        $activity->image = 'activity_report_image/' . $activityFileName;
-//                        $activity->save();
-//                    }
-//                }
-                JobInformation::dispatch(
-                    $job_details->users->email,
-                    StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id),
-                );
-                try {
-                    TwillioHelper::sendSms($job_details->users->phone_no,
-                        StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id));
-                } catch (\Exception $e) {
-                    return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
+                $extraTime = JobFunctions::extraTimeRequest($job_id);
+                if ($extraTime) {
+                    return ResponseFormatter::unauthorizedResponse("Customer requested you for 1 more hour.");
+                } else {
+                    JobFunctions::clockOutRequests($request,$job_details);
                 }
-                return ResponseFormatter::successResponse("Clock-out request sent");
             } else {
                 return ResponseFormatter::errorResponse("Can't clock-out");
             }
@@ -527,7 +505,9 @@ class SecurityJobController extends Controller
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
-            $job_details = JobDetail::where("job_id", $job_id)->first();
+            $job_details = JobDetail::where("job_id", $job_id)
+                ->where("clock_out_request", 1)
+                ->first();
             if ($approval == Constants::DENIED) {
                 $job_details->clock_out_request = Constants::DENIED;
                 $job_details->clock_out_time = null;
@@ -538,8 +518,8 @@ class SecurityJobController extends Controller
                 $jobs = SecurityJob::where("id", $job_id)->first();
                 $jobs->status = Constants::COMPLETED;
                 $job_details->clock_out_request_accepted = Constants::ACCEPTED;
+                JobFunctions::checkAdditionalTime($jobs, $job_details);
                 $job_details->update();
-                $jobs->update();
                 return ResponseFormatter::successResponse("Clock-out accepted");
             }
         }
@@ -562,6 +542,70 @@ class SecurityJobController extends Controller
             $incident_report->image = 'incident_image/' . $imageFileName;
             $incident_report->save();
             return ResponseFormatter::successResponse("Incident report added");
+        }
+    }
+
+    public function requestMoreTime(Request $request, $job_id): \Illuminate\Http\JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            "extra_time" => "required|numeric|min:1|max:2",
+        ]);
+
+        if ($validator->fails())
+            return ResponseFormatter::errorResponse($validator->errors());
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $job = SecurityJob::where("id", $job_id)
+                ->where("job_status", Constants::UPCOMING)
+                ->where("additional_hour_request", false)
+                ->where("additional_hours_accepted", false)
+                ->first();
+            if ($job) {
+                $job->additional_hour_request = Constants::ACTIVE;
+                $job->additional_hours = $request->input("extra_time");
+                $job->update();
+                return ResponseFormatter::successResponse("Extra time request sent");
+            } else {
+                return ResponseFormatter::errorResponse("Extra time request already sent");
+            }
+        }
+    }
+
+    public function responseMoreTime(Request $request, $job_id): \Illuminate\Http\JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            "status" => "required|boolean",
+        ]);
+
+        if ($validator->fails())
+            return ResponseFormatter::errorResponse($validator->errors());
+
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $job = SecurityJob::where("id", $job_id)
+                ->where("job_status", Constants::UPCOMING)
+                ->where("additional_hour_request", true)
+                ->where("additional_hours_accepted", false)
+                ->first();
+            if ($job) {
+                if ($request->input("status") == 0) {
+                    $job->additional_hours_accepted = Constants::REJECTED;
+                    $job_details = JobDetail::where("job_id", $job_id)
+                        ->where("clock_in_request_accepted", Constants::ACCEPTED)
+                        ->first();
+                    JobFunctions::clockOutRequests($request,$job_details);
+                } else {
+                    $job->additional_hours_accepted = Constants::ACCEPTED;
+                }
+                $job->update();
+                return ResponseFormatter::successResponse("Extra time request status updated");
+            } else {
+                return ResponseFormatter::errorResponse("Extra time request could not be updated");
+            }
         }
     }
 }

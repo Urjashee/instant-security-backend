@@ -4,7 +4,10 @@ namespace App\Common\FunctionHelpers;
 
 
 use App\Common\ConfigList;
+use App\Common\ResponseFormatter;
+use App\Common\StringTemplate;
 use App\Constants;
+use App\Jobs\JobInformation;
 use App\Models\ActivityReport;
 use App\Models\FireGuardLicense;
 use App\Models\IncidentReport;
@@ -273,5 +276,45 @@ class JobFunctions
             ];
         }
         return $content_data;
+    }
+
+    public static function extraTimeRequest($job_id): bool
+    {
+        $job = SecurityJob::where("id", $job_id)->first();
+        if ($job->additional_hour_request == true && $job->additional_hours_accepted == false) {
+            return (true);
+        } else {
+            return (false);
+        }
+    }
+    public static function clockOutRequests($request, $job_details): \Illuminate\Http\JsonResponse
+    {
+        $job_details->clock_out_request = Constants::ACCEPTED;
+        $job_details->clock_out_time = $request->input("clock_out_time");
+        $job_details->clock_out_latitude = $request->input("latitude");
+        $job_details->clock_out_longitude = $request->input("longitude");
+        $job_details->update();
+
+        JobInformation::dispatch(
+            $job_details->users->email,
+            StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id),
+        );
+        try {
+            TwillioHelper::sendSms($job_details->users->phone_no,
+                StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id));
+        } catch (\Exception $e) {
+            return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
+        }
+        return ResponseFormatter::successResponse("Clock-out request sent");
+    }
+
+    public static function checkAdditionalTime($job, $job_detail) {
+        if ($job->additional_hours_accepted) {
+            $hours = $job->total_hours + $job->additional_hours;
+        } else {
+            $hours = $job->total_hours;
+        }
+        $job->total_price = $hours * $job->price;
+        $job->update();
     }
 }

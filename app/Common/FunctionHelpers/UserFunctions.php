@@ -41,6 +41,25 @@ class UserFunctions
         }
     }
 
+    public static function editUser($request, $user_id): \Illuminate\Http\JsonResponse
+    {
+        $updateUser = User::where("id",$user_id)->first();
+        if ($updateUser->email !== $request->input("email")) {
+            $updateUser->email = $request->input("email");
+            $updateUser->active = 0;
+        }
+        $updateUser->first_name = $request->input("first_name");
+        $updateUser->last_name = $request->input("last_name");
+        $updateUser->phone_no = $request->input("phone_number");
+        $updateUser->update();
+
+        if (!$updateUser->save()) {
+            return ResponseFormatter::errorResponse();
+        } else{
+            return($updateUser);
+        }
+    }
+
     public static function verifyRequest($request, $role_id) {
         $siteName = Config::get('constants.url');
 

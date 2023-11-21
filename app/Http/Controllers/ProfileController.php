@@ -419,6 +419,10 @@ class ProfileController extends Controller
     public function editCustomerProfile(Request $request): \Illuminate\Http\JsonResponse
     {
         $validator = Validator::make($request->all(), [
+            "email" => "required",
+            "first_name" => "required",
+            "last_name" => "required",
+            "phone_number" => "required",
             "address1" => "required",
             "city" => "required",
             "zipcode" => "numeric",
@@ -430,6 +434,7 @@ class ProfileController extends Controller
         $customer = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($customer) {
 
+//            UserFunctions::editUser($request,$request->input(Constants::CURRENT_USER_ID_KEY));
             $customer->address1 = $request->input("address1");
             if ($request->has("address2")) {
                 $customer->address2 = $request->input("address2");
