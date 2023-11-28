@@ -14,7 +14,7 @@ class AddColumnRoleAndResponsibilityToSecurityJobs extends Migration
     public function up()
     {
         Schema::table('security_jobs', function (Blueprint $table) {
-            $table->text("roles_and_responsibility")->nullable(false)->after("job_description")->default("Job description");
+            $table->text("roles_and_responsibility")->nullable(false)->after("job_description");
         });
     }
 
