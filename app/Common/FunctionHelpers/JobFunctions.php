@@ -166,6 +166,12 @@ class JobFunctions
                 "job_status_name" => ConfigList::jobType($job->job_status),
             ];
         }
+        if ($status == 4) {
+            $content_data += [
+                "job_status_id" => 4,
+                "job_status_name" => ConfigList::jobType(4),
+            ];
+        }
         if ($job->job_status == 1 || $job->job_status == 2) {
             $content_data += [
                 "clock_in_request" => $job->security_jobs->clock_in_request == 0 ? FALSE : TRUE,
@@ -185,8 +191,13 @@ class JobFunctions
                 "job_price_paid" => $job->price_paid == 0 ? False : True,
             ];
         }
-        if ($role != 3) {
-            $activity_logs = ActivityReport::where("job_id",$job->id)->get();
+        if ($role == 4) {
+            $content_data += [
+                "job_price_paid" => $job->price_paid == 0 ? False : True,
+            ];
+        }
+        if ($role == 3) {
+            $activity_logs = ActivityReport::where("job_id", $job->id)->get();
             foreach ($activity_logs as $activity_log) {
                 $activity_logs_data[] = [
                     "message" => $activity_log->message,
@@ -195,8 +206,23 @@ class JobFunctions
                 ];
             }
             $content_data += [
-              "activity_logs" => $activity_logs_data
+                "activity_logs" => $activity_logs_data
             ];
+        }
+        if ($role != 3) {
+            if ($job->job_status == 2) {
+                $activity_logs = ActivityReport::where("job_id", $job->id)->get();
+                foreach ($activity_logs as $activity_log) {
+                    $activity_logs_data[] = [
+                        "message" => $activity_log->message,
+                        "timestamp" => $activity_log->timestamp,
+                        "image" => $s3SiteName . $activity_log->image,
+                    ];
+                }
+                $content_data += [
+                    "activity_logs" => $activity_logs_data
+                ];
+            }
             $incident_reports = IncidentReport::where("job_id",$job->id)->get();
             foreach ($incident_reports as $incident_report) {
                 $incident_report_data[] = [
@@ -281,7 +307,7 @@ class JobFunctions
     public static function extraTimeRequest($job_id): bool
     {
         $job = SecurityJob::where("id", $job_id)->first();
-        if ($job->additional_hour_request == true && $job->additional_hours_accepted == false) {
+        if ($job->additional_hour_request == true && $job->additional_hours_accepted == 0) {
             return (true);
         } else {
             return (false);
@@ -311,10 +337,23 @@ class JobFunctions
     public static function checkAdditionalTime($job, $job_detail) {
         if ($job->additional_hours_accepted) {
             $hours = $job->total_hours + $job->additional_hours;
+            $job->event_add = $job->event_add + $job->additional_hours;
+            $job->additional_hours_accepted = Constants::ACCEPTED;
         } else {
             $hours = $job->total_hours;
         }
         $job->total_price = $hours * $job->price;
         $job->update();
+    }
+    public static function jobCompleted($job_id): bool
+    {
+        $job = SecurityJob::where("id", $job_id)
+            ->where("job_status", Constants::COMPLETED)
+            ->first();
+        if ($job) {
+            return (true);
+        } else {
+            return (false);
+        }
     }
 }

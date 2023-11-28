@@ -36,4 +36,5 @@ class Constants
     const TEST_FIRST_NAME = "--first name__";
     const TEST_LAST_NAME = "--last name__";
     const TEST_PHONE = "--0101092345__";
+    const ONE_HOUR = 3600;
 }

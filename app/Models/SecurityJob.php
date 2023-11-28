@@ -25,11 +25,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property mixed|string|null $chat_sid
  * @property mixed|string|null $chat_service_sid
  * @property float|int|mixed $total_hours
+ * @property float|int|mixed $total_price
  */
 class SecurityJob extends Model
 {
     use HasFactory;
-    protected $with = ["state","users","job_type"];
+    protected $with = ["state","users","job_type","user_profile"];
     public function state(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(State::class, "state_id");
@@ -37,6 +38,10 @@ class SecurityJob extends Model
     public function users(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, "user_id");
+    }
+    public function user_profile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(UserProfile::class, "user_id");
     }
     public function job_type(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

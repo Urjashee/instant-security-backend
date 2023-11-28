@@ -87,16 +87,21 @@ class TwillioHelper
             ->delete();
     }
 
-    public static function addChatParticipantToConversation($identity, $conversationSid): ?string
+    public static function addChatParticipantToConversation($identity, $first_name, $last_name, $user_profile, $conversationSid): ?string
     {
         $sid = Config::get('constants.twilio_access');
         $token = Config::get('constants.twilio_secret');
         $twilio = new Client($sid, $token);
+        $attribute = [
+            "name" => $first_name . " " . $last_name,
+            "profile_image" => $user_profile,
+        ];
 
         $participant = $twilio->conversations->v1->conversations($conversationSid)
             ->participants
             ->create([
-                    "identity" => $identity
+                    "identity" => $identity,
+                    "attributes" => $attribute
                 ]
             );
 
