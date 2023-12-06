@@ -316,7 +316,6 @@ class ProfileController extends Controller
         $validator = Validator::make($request->all(), [
             "account_number" => "numeric",
             "routing" => "required",
-            "bank_name" => "required"
         ]);
 
         if ($validator->fails())
@@ -327,7 +326,6 @@ class ProfileController extends Controller
         if ($userProfile) {
             $userProfile->account_number = $request->input("account_number");
             $userProfile->routing = $request->input("routing");
-            $userProfile->bank_name = $request->input("bank_name");
             $userProfile->update();
 
             return ResponseFormatter::successResponse("Banking info updated");
