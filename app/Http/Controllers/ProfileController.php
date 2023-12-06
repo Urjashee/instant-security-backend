@@ -116,7 +116,7 @@ class ProfileController extends Controller
                     $profile_image->storeAs('user_profile_image', $profileImageFileName, 's3');
                     $userProfile->profile_image = 'user_profile_image/' . $profileImageFileName;
                 }
-                $userProfile->address1 = $request->input("address");
+                $userProfile->address1 = $request->input("street");
                 if ($request->has("address2")) {
                     $userProfile->address2 = $request->input("address2");
                 }
