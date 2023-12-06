@@ -40,6 +40,7 @@ class JwtAuthMiddleware
                     Constants::CURRENT_ROLE_ID_KEY => $token->getClaim("role_id"),
                     Constants::CURRENT_ROLE_NAME_KEY => $token->getClaim("role_name"),
                     Constants::CURRENT_PROFILE_STATUS_KEY => $token->getClaim("user_status"),
+                    Constants::CURRENT_PROFILE_KEY => $token->getClaim("is_profile"),
                     Constants::CURRENT_FRIENDLY_NAME_KEY => $token->getClaim("friendly_name"),
                 ], $extra)));
             }

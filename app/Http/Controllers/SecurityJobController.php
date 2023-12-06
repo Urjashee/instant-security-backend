@@ -21,6 +21,7 @@ use App\Models\RejectedJobUser;
 use App\Models\JobReview;
 use App\Models\SecurityJob;
 use App\Models\State;
+use App\Models\StateLicense;
 use App\Models\User;
 use App\Models\UserProfile;
 use Carbon\Carbon;
@@ -204,12 +205,17 @@ class SecurityJobController extends Controller
     {
         $content_data = array();
         $fire_licenses = array();
+        $state_licenses = array();
         $job_lists = array();
         $job_lists_unique = array();
 
         $user = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $fire_guard_licenses = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
+        $user_state_licenses = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
 
+        foreach ($user_state_licenses as $user_state_license) {
+            $state_licenses[] = $user_state_license->state_id;
+        }
         foreach ($fire_guard_licenses as $fire_guard_license) {
             $fire_licenses[] = $fire_guard_license->fire_guard_license_type;
         }
@@ -220,6 +226,7 @@ class SecurityJobController extends Controller
             ->get();
         foreach ($jobsLicenses as $jobsLicense) {
             if (in_array($jobsLicense->fire_guard_license_id, $fire_licenses)) {
+                $job_lists[] = $jobsLicense->job_id;
                 $cancelled_job_users = RejectedJobUser::where("job_id", $jobsLicense->job_id)
                     ->where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
                     ->first();
@@ -233,9 +240,8 @@ class SecurityJobController extends Controller
             $job_lists_unique[] = array_unique($job_lists);
             foreach ($job_lists_unique as $job_list) {
                 $jobs = SecurityJob::where("id", $job_list)
-                    ->where("state_id", $user->user->state_id)
                     ->first();
-                if ($jobs) {
+                if ($jobs && (in_array($jobs->state_id, $state_licenses))) {
                     $customer_profile = CustomerProfile::where("user_id", $jobs->user_id)->first();
                     $view_jobs_data = JobFunctions::viewJobs($jobs, $customer_profile, Constants::OPEN, null);
                     $content_data[] = $view_jobs_data;
