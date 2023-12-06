@@ -26,7 +26,7 @@ class JobsSeeder extends Seeder
         $states = State::where("active", 1)->pluck('id')->toArray();
         $job_types = JobType::all()->pluck('id')->toArray();
         $fire_arms = Firearms::all()->pluck('id')->toArray();
-        for ($i = 3; $i <= 120; $i++) {
+        for ($i = 1; $i <= 500; $i++) {
             $user_id = $faker->randomElement($users);
             $state_id = $faker->randomElement($states);
             $job_type_id = $faker->randomElement($job_types);
@@ -48,7 +48,7 @@ class JobsSeeder extends Seeder
                 "price_paid" => 0,
                 "job_status" => 1,
             ]);
-            for ($j = 1; $j <= 2; $j++) {
+            for ($j = 1; $j <= 5; $j++) {
                 $fire_arms_id = $faker->randomElement($fire_arms);
                 DB::table('job_fire_license')->insert([
                     "job_id" => $i,
