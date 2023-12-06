@@ -237,10 +237,9 @@ class SecurityJobController extends Controller
         }
 
         if ($job_lists != null) {
-            $job_lists_unique[] = array_unique($job_lists);
+            $job_lists_unique = array_unique($job_lists);
             foreach ($job_lists_unique as $job_list) {
-                $jobs = SecurityJob::where("id", $job_list)
-                    ->first();
+                $jobs = SecurityJob::where("id", $job_list)->first();
                 if ($jobs && (in_array($jobs->state_id, $state_licenses))) {
                     $customer_profile = CustomerProfile::where("user_id", $jobs->user_id)->first();
                     $view_jobs_data = JobFunctions::viewJobs($jobs, $customer_profile, Constants::OPEN, null);
