@@ -87,7 +87,7 @@ class ProfileController extends Controller
     {
         $validator = Validator::make($request->all(), [
             "phone_number" => "required",
-            "address1" => "required",
+            "street" => "required",
             "city" => "required",
             "zipcode" => "required",
         ]);
@@ -116,7 +116,7 @@ class ProfileController extends Controller
                     $profile_image->storeAs('user_profile_image', $profileImageFileName, 's3');
                     $userProfile->profile_image = 'user_profile_image/' . $profileImageFileName;
                 }
-                $userProfile->address1 = $request->input("address1");
+                $userProfile->address1 = $request->input("address");
                 if ($request->has("address2")) {
                     $userProfile->address2 = $request->input("address2");
                 }
@@ -388,8 +388,8 @@ class ProfileController extends Controller
                 "user_last_name" => $userProfile->user->last_name,
                 "user_email" => $userProfile->user->email,
                 "user_phone_no" => $userProfile->user->phone_no,
-                "user_address_1" => $userProfile->address1,
-                "user_address_2" => $userProfile->address2,
+                "user_street" => $userProfile->address1,
+//                "user_address_2" => $userProfile->address2,
                 "user_state" => $userProfile->user->state_id,
                 "user_city" => $userProfile->city,
                 "user_zipcode" => $userProfile->zipcode,
