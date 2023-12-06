@@ -34,7 +34,7 @@ class ProfileFunctions
             $oshaImageFileName = time() . '.' . $request->file('osha_image')->getClientOriginalExtension();
             $osha_image = $request->file("osha_image");
             $osha_image->storeAs('osha_image', $oshaImageFileName, 's3');
-            $userProfile->osha_license_image = 'osha_image' . $oshaImageFileName;
+            $userProfile->osha_license_image = 'osha_image/' . $oshaImageFileName;
         }
 
         if ($request->has('osha_license_type')) {
