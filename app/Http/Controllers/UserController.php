@@ -39,7 +39,7 @@ class UserController extends Controller
             "first_name" => "alpha",
             "last_name" => "alpha",
             "phone_number" => "required",
-            "address1" => "required",
+            "street" => "required",
             "state" => "numeric",
             "city" => "required",
             "zipcode" => "required",
@@ -57,7 +57,7 @@ class UserController extends Controller
 
             $newUserProfile = new UserProfile();
             $newUserProfile->user_id = $user->id;
-            $newUserProfile->address1 = $request->input("address1");
+            $newUserProfile->address1 = $request->input("street");
             if ($request->has("address2")) {
                 $newUserProfile->address2 = $request->input("address2");
             }

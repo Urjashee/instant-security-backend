@@ -23,7 +23,7 @@ class UserCustomerSeeder extends Seeder
         $faker = Factory::create();
         $states = State::where("active", 1)->pluck('id')->toArray();
         $fire_arms = Firearms::all()->pluck('id')->toArray();
-        for ($i = 121; $i <= 250; $i++) {
+        for ($i = 11; $i <= 250; $i++) {
             $first_name = $faker->firstName;
             $last_name = $faker->lastName;
             $state_id = $faker->randomElement($states);
