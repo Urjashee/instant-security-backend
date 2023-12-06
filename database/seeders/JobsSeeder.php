@@ -43,6 +43,7 @@ class JobsSeeder extends Seeder
                 "event_end" => 1696847015,
                 "osha_license_id" => 2,
                 "job_description" => $faker->text(300),
+                "roles_and_responsibility" => $faker->text(300),
                 "price" => 10.0,
                 "max_price" => 90.0,
                 "price_paid" => 0,
