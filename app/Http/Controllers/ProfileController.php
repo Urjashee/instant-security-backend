@@ -168,7 +168,7 @@ class ProfileController extends Controller
             "govt_id_expiry_date" => "required",
             "user_govt_id_image" => "required",
             "user_ssc_image" => "required",
-            "user_profile_image" => "required"
+//            "user_profile_image" => "required"
         ]);
 
         if ($validator->fails())
