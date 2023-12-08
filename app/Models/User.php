@@ -23,10 +23,14 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
-    protected $with = ["role"];
+    protected $with = ["role", "state"];
     public function role()
     {
         return $this->belongsTo(Roles::class, "user_role_id");
+    }
+    public function state()
+    {
+        return $this->belongsTo(State::class, "state_id");
     }
 
     /**
