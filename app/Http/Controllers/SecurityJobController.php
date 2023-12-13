@@ -46,6 +46,7 @@ class SecurityJobController extends Controller
             "event_start" => "required",
             "event_end" => "required",
             "osha_license_id" => "required",
+            "roles_and_responsibility" => "required"
         ]);
 
         if ($validator->fails())
@@ -88,6 +89,7 @@ class SecurityJobController extends Controller
                     $newJobs->total_hours = $time2->diffInMinutes($time1) / 60;
                     $newJobs->osha_license_id = $request->input("osha_license_id");
                     $newJobs->job_description = $request->input("job_description");
+                    $newJobs->roles_and_responsibility = $request->input("roles_and_responsibility");
                     $newJobs->price = $jobType->hourly_rate;
                     $difference = $request->input("event_end") - $request->input("event_start");
                     $newJobs->max_price = ($difference / 3600) * $jobType->hourly_rate;
@@ -293,7 +295,7 @@ class SecurityJobController extends Controller
                 if ($job) {
                     if ($job->participant_id == null) {
                         try {
-                            $participant = TwillioHelper::addChatParticipantToConversation($job->users->friendly_name, $job->users->first_name, $job->users->last_name, $job->user_profile->profile_image, $job->chat_sid);
+                            $participant = TwillioHelper::addChatParticipantToConversation($job->users->friendly_name, $job->chat_sid);
                         } catch (\Exception $e) {
                             return ResponseFormatter::errorResponse($e->getMessage());
                         }
@@ -306,7 +308,7 @@ class SecurityJobController extends Controller
                     $job_details->job_id = $job->id;
                     $job_details->guard_id = $request->input(Constants::CURRENT_USER_ID_KEY);
                     try {
-                        $participant_user = TwillioHelper::addChatParticipantToConversation($user->friendly_name, $job->users->first_name, $job->users->last_name, $job->chat_sid);
+                        $participant_user = TwillioHelper::addChatParticipantToConversation($user->friendly_name, $job->chat_sid);
                     } catch (\Exception $e) {
                         return ResponseFormatter::errorResponse($e->getMessage());
                     }

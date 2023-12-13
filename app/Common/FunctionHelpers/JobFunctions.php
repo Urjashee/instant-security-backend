@@ -73,6 +73,7 @@ class JobFunctions
         } else {
             return (true);
         }
+        return (true);
     }
     public static function licenceExpiry($user_id, $job_id): bool
     {
@@ -80,36 +81,34 @@ class JobFunctions
         if($job) {
             $personalLicense = UserProfile::where("user_id", $user_id)->first();
             if ($personalLicense) {
-//                $govt_id_expiry = Carbon::createFromTimestamp($personalLicense->govt_id_expiry_date);
-//                $osha_license_expiry = Carbon::createFromTimestamp($personalLicense->osha_license_expiry_date);
-                if (($personalLicense->govt_id_expiry_date < $job->event_start) ||
-                    ($personalLicense->osha_license_expiry_date < $job->event_start)) {
+//                return ([$personalLicense->govt_id_expiry_date , Carbon::createFromTimestamp($job->event_start)->format('Y-m-d')]);
+                if (($personalLicense->govt_id_expiry_date < Carbon::createFromTimestamp($job->event_start)->format('Y-m-d')) ||
+                    ($personalLicense->osha_license_expiry_date < Carbon::createFromTimestamp($job->event_start)->format('Y-m-d'))) {
                     return (false);
                 }
             }
             $stateLicense = StateLicense::where("user_id", $user_id)->first();
             if ($stateLicense) {
-//                $security_guard_license_expiry = Carbon::createFromTimestamp($stateLicense->security_guard_license_expiry);
-//                $cpr_certificate_expiry = Carbon::createFromTimestamp($stateLicense->cpr_certificate_expiry);
-                if (($stateLicense->security_guard_license_expiry < $job->event_start) ||
-                    ($stateLicense->cpr_certificate_expiry < $job->event_start)) {
+                if (($stateLicense->security_guard_license_expiry < Carbon::createFromTimestamp($job->event_start)->format('Y-m-d')) ||
+                    ($stateLicense->cpr_certificate_expiry < Carbon::createFromTimestamp($job->event_start)->format('Y-m-d'))) {
                     return (false);
                 }
             }
             $fireLicenses = FireGuardLicense::where("user_id", $user_id)
                 ->where("state_id",$job->state_id)
-                ->first();
+                ->get();
             if ($fireLicenses) {
                 foreach ($fireLicenses as $fireLicense) {
-//                    $fire_guard_license_expiry = Carbon::createFromTimestamp($fireLicense->fire_guard_license_expiry);
-                    if (($fireLicense->fire_guard_license_expiry < $job->event_start)) {
+                    if (($fireLicense->fire_guard_license_expiry < Carbon::createFromTimestamp($job->event_start)->format('Y-m-d'))) {
                         return (false);
                     }
                 }
-            } else {
+            }
+            else {
                 return (true);
             }
         }
+        return true;
     }
 
     public static function jobDetails($job, $role, $status): array
@@ -121,6 +120,7 @@ class JobFunctions
             "job_id" => $job->id,
             "job_event_name" => $job->event_name,
             "job_description" => $job->job_description,
+            "job_roles_and_responsibility" => $job->roles_and_responsibility,
             "job_type_id" => $job->job_type_id,
             "job_type" => $job->job_type->name,
             "job_state_id" => $job->state_id,
@@ -275,6 +275,7 @@ class JobFunctions
         if ($status == 0) {
             $content_data += [
                 "job_description" => $jobs->job_description,
+                "job_roles_and_responsibility" => $jobs->roles_and_responsibility,
                 "job_price" => $jobs->price,
                 "job_max_price" => $jobs->max_price,
                 "job_status_id" => $jobs->job_status,

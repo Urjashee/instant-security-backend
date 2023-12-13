@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property mixed|string|null $chat_service_sid
  * @property float|int|mixed $total_hours
  * @property float|int|mixed $total_price
+ * @property mixed $roles_and_responsibility
  */
 class SecurityJob extends Model
 {

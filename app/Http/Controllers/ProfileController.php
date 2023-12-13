@@ -46,8 +46,7 @@ class ProfileController extends Controller
             }
             if (
                 $userProfile->account_number != null &&
-                $userProfile->routing != null &&
-                $userProfile->bank_name != null
+                $userProfile->routing != null
             ) {
                 $personal_payment = 1;
             }
@@ -302,7 +301,20 @@ class ProfileController extends Controller
             }
 
             if ($request->has('fire_guard_license')) {
-                // TODO
+                $arrayFireGuard = json_decode($request->input('fire_guard_license'));
+                foreach ($arrayFireGuard as $key => $value) {
+                    $fire_guard_license = new FireGuardLicense();
+                    $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+                    $fire_guard_license->state_id = $request->input("state_id");
+//                    $fire_guard_license->fire_guard_license_type = $value["fire_guard_license_type"];
+                    $fire_guard_license->fire_guard_license_type = $value->fire_guard_license_type;
+                    $fireGuardLicenseFileName = time() . '.' . $request->file($value->fire_guard_license_image[$key])->getClientOriginalExtension();
+                    $fire_guard_license_image = $request->file($value->fire_guard_license_image[$key]);
+                    $fire_guard_license_image->storeAs('fire_guard_license_image', $fireGuardLicenseFileName, 's3');
+                    $fire_guard_license->fire_guard_license_image = 'fire_guard_license_image/' . $fireGuardLicenseFileName;
+                    $fire_guard_license->fire_guard_license_expiry = $value->fire_guard_license_expiry;
+                    $fire_guard_license->save();
+                }
             }
             $stateLicense->update();
 
