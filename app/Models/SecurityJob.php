@@ -27,6 +27,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property float|int|mixed $total_hours
  * @property float|int|mixed $total_price
  * @property mixed $roles_and_responsibility
+ * @property mixed|string $price_id
+ * @property mixed|string $invoice_item_id
+ * @property mixed|string|null $invoice_id
  */
 class SecurityJob extends Model
 {

@@ -3,6 +3,8 @@
 namespace App\Common\FunctionHelpers;
 
 
+use Illuminate\Support\Facades\Storage;
+
 class ProfileFunctions
 {
     public static function addUpdateProfile($userProfile, $request) {
@@ -49,5 +51,28 @@ class ProfileFunctions
     public static function addUpdateStateLicenses($userProfile, $request) {
 
         return $userProfile->update();
+    }
+
+    public static function convertImage($value) {
+        $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+        $pin = mt_rand(1000000, 9999999)
+            . mt_rand(1000000, 9999999)
+            . $characters[rand(0, strlen($characters) - 1)];
+        $extensions = '';
+        $image = $value->fire_guard_license_image;
+        if (str_contains($image,'png')) $extensions = 'png';
+        if (str_contains($image,'jpeg')) $extensions = 'jpeg';
+        if (str_contains($image,'bmp')) $extensions = 'bmp';
+        if (str_contains($image,'gif')) $extensions = 'gif';
+
+        $image = str_replace('data:image/png;base64,', '', $image);
+        $image = str_replace('data:image/jpeg;base64,', '', $image);
+        $image = str_replace('data:image/bmp;base64,', '', $image);
+        $image = str_replace('data:image/gif;base64,', '', $image);
+        $image = str_replace(' ', '+', $image);
+
+        $fireGuardLicenseFileName = 'fire_guard_license_image/' . $pin . '.' . $extensions;
+        Storage::disk('s3')->put($fireGuardLicenseFileName, base64_decode($image));
+        return $fireGuardLicenseFileName;
     }
 }

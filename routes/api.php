@@ -24,6 +24,9 @@ Route::post("/verify-account", [\App\Http\Controllers\AccountController::class, 
 Route::post("/send", [\App\Http\Controllers\UserController::class, 'sendEmail']);
 Route::get("/refresh-token", [\App\Http\Controllers\LoginController::class, 'refreshToken'])->middleware("check_refresh_token");
 
+//Stripe
+Route::get("/invoice", [\App\Http\Controllers\SecurityJobController::class, 'addInvoice']);
+
 Route::group(["middleware" => ["jwt.verify"]], function () {
     //Lists
     Route::get("/list/config", [\App\Http\Controllers\ListController::class, 'getAllLists']);
@@ -92,6 +95,10 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
 
     Route::group(["middleware" => ["rbac:super_admin"]], function () {
         Route::group(['prefix' => '/admin'], function () {
+            Route::get("/guards", [\App\Http\Controllers\UserController::class, 'getAllUsers']);
+            Route::get("/guards/{id}", [\App\Http\Controllers\UserController::class, 'getUserDetails']);
+            Route::get("/customers", [\App\Http\Controllers\UserController::class, 'getAllCustomers']);
+            Route::get("/customers/{id}", [\App\Http\Controllers\UserController::class, 'getCustomerDetails']);
             Route::post("/deactivate-user", [\App\Http\Controllers\UserController::class, 'deactivateUser']);
             Route::patch("/account-status/{user_id}", [\App\Http\Controllers\AccountController::class, 'updateAccountStatus']);
             Route::post("/job-type", [\App\Http\Controllers\JobTypeController::class, 'addJobType']);
@@ -100,6 +107,7 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
             Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
 
             Route::patch("/state/{id}", [\App\Http\Controllers\StateController::class, 'changeStateStatus']);
+            Route::get("/transactions", [\App\Http\Controllers\SecurityJobController::class, 'transactions']);
 
             Route::get("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'getAllJobs']);
             Route::get("/jobs/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);

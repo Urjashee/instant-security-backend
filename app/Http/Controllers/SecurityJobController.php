@@ -92,12 +92,32 @@ class SecurityJobController extends Controller
                     $newJobs->roles_and_responsibility = $request->input("roles_and_responsibility");
                     $newJobs->price = $jobType->hourly_rate;
                     $difference = $request->input("event_end") - $request->input("event_start");
-                    $newJobs->max_price = ($difference / 3600) * $jobType->hourly_rate;
-                    $newJobs->total_price = ($difference / 3600) * $jobType->hourly_rate;
+                    $total_price = ($difference / 3600) * $jobType->hourly_rate;
+                    $newJobs->max_price = $total_price;
+                    $newJobs->total_price = $total_price;
                     $newJobs->price_paid = 0;
                     $newJobs->job_status = 0;
                     $newJobs->chat_sid = $conversation->sid;
                     $newJobs->chat_service_sid = $conversation->chatServiceSid;
+                    try {
+                        $createPrice = StripeHelper::createPrice($total_price,$jobType->name);
+                    } catch (\Exception $e) {
+                        return ResponseFormatter::errorResponse($e->getMessage());
+                    }
+                    $newJobs->price_id=$createPrice->id;
+                    try {
+                        $invoiceItem = StripeHelper::createInvoiceItem($customer_profile->customer_id,$createPrice->id);
+                    } catch (\Exception $e) {
+                        return ResponseFormatter::errorResponse($e->getMessage());
+                    }
+                    $newJobs->invoice_item_id=$invoiceItem->id;
+                    try {
+                        $invoice = StripeHelper::createInvoices($customer_profile->customer_id);
+                    } catch (\Exception $e) {
+                        return ResponseFormatter::errorResponse($e->getMessage());
+                    }
+                    $newJobs->invoice_id=$invoice->id;
+
                     $newJobs->save();
                     $newJobs->refresh();
                     if ($request->has("fire_guard_license")) {
@@ -302,6 +322,7 @@ class SecurityJobController extends Controller
 
                         $job->participant_id = $participant;
                     }
+
                     $job->job_status = Constants::UPCOMING;
                     $job->update();
                     $job_details = new JobDetail();
@@ -418,6 +439,16 @@ class SecurityJobController extends Controller
                 $job->participant_id = null;
                 $job->security_jobs->update();
                 $job->update();
+                try {
+                    StripeHelper::deleteInvoiceItem($job->invoice_item_id);
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage());
+                }
+                try {
+                    StripeHelper::voidInvoices($job->invoice_id);
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage());
+                }
                 return ResponseFormatter::successResponse("Job cancelled successfully");
             } else {
                 return ResponseFormatter::errorResponse("Can't cancel once the job has started");
@@ -523,6 +554,13 @@ class SecurityJobController extends Controller
                 $jobs = SecurityJob::where("id", $job_id)->first();
                 $jobs->status = Constants::COMPLETED;
                 $job_details->clock_out_request_accepted = Constants::ACCEPTED;
+                try {
+                    StripeHelper::payInvoices($jobs->invoice_id);
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage());
+                }
+                $jobs->invoice_paid = Constants::ACCEPTED;
+                $jobs->update();
                 $job_details->update();
                 return ResponseFormatter::successResponse("Clock-out accepted");
             }
@@ -640,6 +678,24 @@ class SecurityJobController extends Controller
             $review->message = $request->input("message");
             $review->save();
             return ResponseFormatter::successResponse("Job Review added");
+        }
+    }
+    public function addInvoice(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $invoice = StripeHelper::createInvoices('cus_PApn4QFfH2PQbm');
+        if ($invoice)
+            return ResponseFormatter::successResponse("Create invoice", $invoice);
+        else
+            return ResponseFormatter::errorResponse("Error");
+    }
+
+    public function transactions() {
+        $jobs = SecurityJob::where("job_status", Constants::ACCEPTED)->get();
+        if ($jobs) {
+
+            return ResponseFormatter::successResponse("Transactions", $jobs);
+        } else {
+            return ResponseFormatter::errorResponse("No transactions");
         }
     }
 }

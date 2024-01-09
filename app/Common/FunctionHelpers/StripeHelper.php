@@ -229,4 +229,66 @@ class StripeHelper
             ]
         );
     }
+
+//    Price
+    public static function createPrice($amount, $product_name): \Stripe\Price
+    {
+        $stripe = new StripeClient(Config::get('constants.mx_test'));
+        return $stripe->prices->create([
+                'currency' => 'usd',
+                'unit_amount' => $amount,
+                'product_data' => [
+                    'name' => $product_name
+                ],
+            ]
+        );
+    }
+
+    public static function updatePrice($price_id, $amount): \Stripe\Price
+    {
+        $stripe = new StripeClient(Config::get('constants.mx_test'));
+        return $stripe->prices->update($price_id, [
+            'unit_amount' => $amount,
+        ]);
+    }
+
+//    Invoice Items
+    public static function createInvoiceItem($customer_id, $price_id): \Stripe\InvoiceItem
+    {
+        $stripe = new StripeClient(Config::get('constants.mx_test'));
+        return $stripe->invoiceItems->create([
+                'customer' => $customer_id,
+                'price' => $price_id
+            ]
+        );
+    }
+
+    public static function deleteInvoiceItem($invoice_item_id): \Stripe\InvoiceItem
+    {
+        $stripe = new StripeClient(Config::get('constants.mx_test'));
+        return $stripe->invoiceItems->delete($invoice_item_id);
+    }
+
+// Invoices
+    public static function createInvoices($customer_id): \Stripe\Invoice
+    {
+        $stripe = new StripeClient(Config::get('constants.mx_test'));
+        return $stripe->invoices->create([
+                'customer' => $customer_id,
+                'collection_method' => 'charge_automatically',
+            ]
+        );
+    }
+
+    public static function payInvoices($invoice_id): \Stripe\Invoice
+    {
+        $stripe = new StripeClient(Config::get('constants.mx_test'));
+        return $stripe->invoices->pay($invoice_id);
+    }
+
+    public static function voidInvoices($invoice_id): \Stripe\Invoice
+    {
+        $stripe = new StripeClient(Config::get('constants.mx_test'));
+        return $stripe->invoices->voidInvoice($invoice_id);
+    }
 }

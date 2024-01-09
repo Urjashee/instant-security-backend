@@ -8,6 +8,7 @@ use App\Constants;
 use App\Common\ResponseFormatter;
 use App\Jobs\SendMail;
 use App\Models\CustomerProfile;
+use App\Models\FireGuardLicense;
 use App\Models\Roles;
 use App\Models\User;
 use App\Models\UserProfile;
@@ -141,9 +142,39 @@ class UserController extends Controller
 
     public function getAllUsers(): \Illuminate\Http\JsonResponse
     {
-        $users = User::all();
-        return ResponseFormatter::successResponse(" detail.", $users);
-        //return response()->json($users);
+        $users = User::where("user_role_id",Constants::MOBILE_USER)->get();
+        $userDetails = UserFunctions::getUser($users);
+        return ResponseFormatter::successResponse("Users", $userDetails);
+    }
+
+    public function getAllCustomers(): \Illuminate\Http\JsonResponse
+    {
+        $users = User::where("user_role_id",Constants::WEB_USER)->get();
+        $userDetails = UserFunctions::getUser($users);
+        return ResponseFormatter::successResponse("Users", $userDetails);
+    }
+
+    public function getUserDetails($user_id): \Illuminate\Http\JsonResponse
+    {
+        $userProfile = UserProfile::where("user_id", $user_id)->first();
+        if ($userProfile) {
+            $contentData = UserFunctions::getProfileDetailsUser($user_id,$userProfile);
+            return ResponseFormatter::successResponse("User Profile", $contentData);
+        } else {
+            return ResponseFormatter::errorResponse("Profile not found");
+        }
+    }
+
+    public function getCustomerDetails($user_id): \Illuminate\Http\JsonResponse
+    {
+        $userProfile = CustomerProfile::where("user_id", $user_id)->first();
+
+        if ($userProfile) {
+            $contentData = UserFunctions::getProfileDetailsCustomer($userProfile);
+            return ResponseFormatter::successResponse("Web Profile", $contentData);
+        } else {
+            return ResponseFormatter::errorResponse("Profile not found");
+        }
     }
 
     public function getCurrentUser(Request $request): \Illuminate\Http\JsonResponse

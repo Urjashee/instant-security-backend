@@ -207,6 +207,7 @@ class ProfileController extends Controller
             "cpr_certificate_expiry" => "required"
         ]);
 
+
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors());
 
@@ -230,18 +231,15 @@ class ProfileController extends Controller
             $stateLicense->security_guard_license_expiry = $request->input("security_guard_license_expiry");
 
             if ($request->input('fire_guard_license') !== null) {
-//                $arrayFireGuard = json_decode($request->input('fire_guard_license'));
-                foreach ($request->input('fire_guard_license') as $key => $value) {
+                $arrayFireGuard = json_decode($request->input('fire_guard_license'));
+                foreach ($arrayFireGuard as $value) {
+                    $image = ProfileFunctions::convertImage($value);
                     $fire_guard_license = new FireGuardLicense();
                     $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
                     $fire_guard_license->state_id = $request->input("state_id");
-//                    $fire_guard_license->fire_guard_license_type = $value["fire_guard_license_type"];
-                    $fire_guard_license->fire_guard_license_type = $value["fire_guard_license_type"];
-                    $fireGuardLicenseFileName = time() . '.' . $request->file("fire_guard_license.$key.fire_guard_license_image")->getClientOriginalExtension();
-                    $fire_guard_license_image = $request->file("fire_guard_license.$key.fire_guard_license_image");
-                    $fire_guard_license_image->storeAs('fire_guard_license_image', $fireGuardLicenseFileName, 's3');
-                    $fire_guard_license->fire_guard_license_image = 'fire_guard_license_image/' . $fireGuardLicenseFileName;
-                    $fire_guard_license->fire_guard_license_expiry = $value["fire_guard_license_expiry"];
+                    $fire_guard_license->fire_guard_license_type = $value->fire_guard_license_type;
+                    $fire_guard_license->fire_guard_license_image = $image;
+                    $fire_guard_license->fire_guard_license_expiry = $value->fire_guard_license_expiry;
                     $fire_guard_license->save();
                 }
             }
@@ -255,7 +253,7 @@ class ProfileController extends Controller
             $stateLicense->cpr_certificate_expiry = $request->input("cpr_certificate_expiry");
             $stateLicense->save();
 
-            return ResponseFormatter::successResponse("State licenses updated");
+            return ResponseFormatter::successResponse("State licenses added");
         }
     }
 
@@ -264,6 +262,8 @@ class ProfileController extends Controller
         $validator = Validator::make($request->all(), [
             "state_id" => "required",
         ]);
+
+        $fireGuardLicenseList = array();
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors());
@@ -303,17 +303,35 @@ class ProfileController extends Controller
             if ($request->has('fire_guard_license')) {
                 $arrayFireGuard = json_decode($request->input('fire_guard_license'));
                 foreach ($arrayFireGuard as $key => $value) {
-                    $fire_guard_license = new FireGuardLicense();
-                    $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
-                    $fire_guard_license->state_id = $request->input("state_id");
-//                    $fire_guard_license->fire_guard_license_type = $value["fire_guard_license_type"];
-                    $fire_guard_license->fire_guard_license_type = $value->fire_guard_license_type;
-                    $fireGuardLicenseFileName = time() . '.' . $request->file($value->fire_guard_license_image[$key])->getClientOriginalExtension();
-                    $fire_guard_license_image = $request->file($value->fire_guard_license_image[$key]);
-                    $fire_guard_license_image->storeAs('fire_guard_license_image', $fireGuardLicenseFileName, 's3');
-                    $fire_guard_license->fire_guard_license_image = 'fire_guard_license_image/' . $fireGuardLicenseFileName;
-                    $fire_guard_license->fire_guard_license_expiry = $value->fire_guard_license_expiry;
-                    $fire_guard_license->save();
+                    $updateFireGuard =FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                        ->where("state_id", $request->input("state_id"))
+                        ->where("fire_guard_license_type", $value->fire_guard_license_type)
+                        ->get();
+                    if ($updateFireGuard) {
+                        $fireGuardLicenseList[] = $updateFireGuard->id;
+                    } else {
+                        $image = ProfileFunctions::convertImage($value);
+                        $fire_guard_license = new FireGuardLicense();
+                        $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+                        $fire_guard_license->state_id = $request->input("state_id");
+                        $fire_guard_license->fire_guard_license_type = $value->fire_guard_license_type;
+                        $fire_guard_license->fire_guard_license_image = $image;
+                        $fire_guard_license->fire_guard_license_expiry = $value->fire_guard_license_expiry;
+                        $fire_guard_license->save();
+                        $fire_guard_license->refresh();
+                        $fireGuardLicenseList[] = $fire_guard_license->id;
+                    }
+//                    $fire_guard_license = new FireGuardLicense();
+//                    $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+//                    $fire_guard_license->state_id = $request->input("state_id");
+////                    $fire_guard_license->fire_guard_license_type = $value["fire_guard_license_type"];
+//                    $fire_guard_license->fire_guard_license_type = $value->fire_guard_license_type;
+//                    $fireGuardLicenseFileName = time() . '.' . $request->file($value->fire_guard_license_image[$key])->getClientOriginalExtension();
+//                    $fire_guard_license_image = $request->file($value->fire_guard_license_image[$key]);
+//                    $fire_guard_license_image->storeAs('fire_guard_license_image', $fireGuardLicenseFileName, 's3');
+//                    $fire_guard_license->fire_guard_license_image = 'fire_guard_license_image/' . $fireGuardLicenseFileName;
+//                    $fire_guard_license->fire_guard_license_expiry = $value->fire_guard_license_expiry;
+//                    $fire_guard_license->save();
                 }
             }
             $stateLicense->update();
@@ -366,59 +384,9 @@ class ProfileController extends Controller
 
     public function getUserProfile(Request $request): \Illuminate\Http\JsonResponse
     {
-        $license = array();
-        $fireGuard = array();
-        $contentData = array();
-        $s3SiteName = Config::get('constants.s3_bucket');
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
-
         if ($userProfile) {
-            $stateLicenses = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
-            $fireGuardLicenses = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
-            foreach ($fireGuardLicenses as $fireGuardLicense) {
-                $fireGuard[] = [
-                    "fire_guard_license_type" => $fireGuardLicense->fire_guard_license_type,
-                    "fire_guard_license_type_name" => $fireGuardLicense->fire_arms->name,
-                    "fire_guard_license_image" => $s3SiteName . $fireGuardLicense->fire_guard_license_image,
-                    "fire_guard_license_expiry" => $fireGuardLicense->fire_guard_license_expiry,
-                ];
-            }
-            foreach ($stateLicenses as $stateLicense) {
-                $license[] = [
-                    "state_id" => $stateLicense->state_id,
-                    "state_name" => $stateLicense->state->name,
-                    "security_guard_license_image" => $s3SiteName . $stateLicense->security_guard_license_image,
-                    "security_guard_license_expiry" => $stateLicense->security_guard_license_expiry,
-                    "cpr_certificate_image" => $s3SiteName . $stateLicense->cpr_certificate_image,
-                    "cpr_certificate_expiry" => $stateLicense->cpr_certificate_expiry,
-                    "fire_guard" => $fireGuard
-                ];
-            }
-            $contentData = [
-                "user_id" => $userProfile->user_id,
-                "user_first_name" => $userProfile->user->first_name,
-                "user_last_name" => $userProfile->user->last_name,
-                "user_email" => $userProfile->user->email,
-                "user_phone_no" => $userProfile->user->phone_no,
-                "user_street" => $userProfile->address1,
-//                "user_address_2" => $userProfile->address2,
-                "user_state_id" => $userProfile->user->state_id,
-                "user_state_name" => $userProfile->user->state->name,
-                "user_city" => $userProfile->city,
-                "user_zipcode" => $userProfile->zipcode,
-                "user_profile_image" => $userProfile->profile_image == null ? "" : $s3SiteName . $userProfile->profile_image,
-                "user_ssc_image" => $userProfile->ssc_image == null ? "" : $s3SiteName . $userProfile->ssc_image,
-                "user_govt_id_image" => $userProfile->govt_id_image == null ? "" : $s3SiteName . $userProfile->govt_id_image,
-                "user_govt_id_expiry_date" => $userProfile->govt_id_expiry_date,
-                "user_osha_license_type" => $userProfile->osha_license_type,
-                "user_osha_license_image" => $userProfile->osha_license_image == null ? "" : $s3SiteName . $userProfile->osha_license_image,
-                "user_osha_license_expiry_date" => $userProfile->osha_license_expiry_date,
-                "user_account_number" => $userProfile->account_number,
-                "user_routing" => $userProfile->routing,
-                "user_bank_name" => $userProfile->bank_name,
-                "user_terms_and_condition" => $userProfile->terms_and_condition,
-                "state_license" => $license,
-            ];
+            $contentData = UserFunctions::getProfileDetailsUser($request->input(Constants::CURRENT_USER_ID_KEY),$userProfile);
             return ResponseFormatter::successResponse("User Profile", $contentData);
         } else {
             return ResponseFormatter::errorResponse("Profile not found");
@@ -482,26 +450,10 @@ class ProfileController extends Controller
 
     public function getCustomerProfile(Request $request): \Illuminate\Http\JsonResponse
     {
-        $contentData = array();
-        $s3SiteName = Config::get('constants.s3_bucket');
         $userProfile = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
         if ($userProfile) {
-
-            $contentData = [
-                "web_user_id" => $userProfile->user_id,
-                "web_first_name" => $userProfile->user->first_name,
-                "web_last_name" => $userProfile->user->last_name,
-                "web_email" => $userProfile->user->email,
-                "web_phone_no" => $userProfile->user->phone_no,
-                "web_address_1" => $userProfile->address1,
-                "web_address_2" => $userProfile->address2,
-                "web_state" => $userProfile->user->state_id,
-                "web_city" => $userProfile->city,
-                "web_zipcode" => $userProfile->zipcode,
-                "web_profile_image" => $s3SiteName . $userProfile->profile_image,
-                "web_state_id_image" => $s3SiteName . $userProfile->state_id_image,
-            ];
+            $contentData = UserFunctions::getProfileDetailsCustomer($userProfile);
             return ResponseFormatter::successResponse("Web Profile", $contentData);
         } else {
             return ResponseFormatter::errorResponse("Profile not found");
