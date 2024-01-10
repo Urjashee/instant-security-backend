@@ -18,6 +18,19 @@ use Illuminate\Support\Str;
 
 class UserFunctions
 {
+
+    public static function authenticateUser($id, $user): bool
+    {
+        $user = FireGuardLicense::where("user_id", $user)
+            ->where("id", $id)
+            ->first();
+        if ($user) {
+            return (true);
+        } else {
+            return (false);
+        }
+    }
+
     public static function addUser($request, $role_id)
     {
         $newUser = new User;
@@ -135,6 +148,7 @@ class UserFunctions
                 ->get();
             foreach ($fireGuardLicenses as $fireGuardLicense) {
                 $fireGuard[] = [
+                    "fire_guard_license_id" => $fireGuardLicense->id,
                     "fire_guard_license_type" => $fireGuardLicense->fire_guard_license_type,
                     "fire_guard_license_type_name" => $fireGuardLicense->fire_arms->name,
                     "fire_guard_license_image" => $s3SiteName . $fireGuardLicense->fire_guard_license_image,

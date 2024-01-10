@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\FunctionHelpers\JobFunctions;
 use App\Common\FunctionHelpers\ProfileFunctions;
 use App\Common\FunctionHelpers\UserFunctions;
 use App\Common\ResponseFormatter;
@@ -272,6 +273,8 @@ class ProfileController extends Controller
             ->where("state_id", $request->input("state_id"))
             ->first();
 
+        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+
         if (!$stateLicense) {
             return ResponseFormatter::errorResponse("State licenses record doesn't exist");
         } else {
@@ -306,8 +309,19 @@ class ProfileController extends Controller
                     $updateFireGuard =FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
                         ->where("state_id", $request->input("state_id"))
                         ->where("fire_guard_license_type", $value->fire_guard_license_type)
-                        ->get();
+                        ->first();
                     if ($updateFireGuard) {
+                        $deleted_image = $updateFireGuard->fire_guard_license_image;
+                        $image = ProfileFunctions::convertImage($value);
+                        $updateFireGuard->fire_guard_license_image = $image;
+                        $updateFireGuard->fire_guard_license_expiry = $value->fire_guard_license_expiry;
+                        $updateFireGuard->update();
+                        try {
+                            $s3 = Storage::disk('s3');
+                            $s3->delete($deleted_image);
+                        } catch (\Exception $e) {
+                            return ResponseFormatter::errorResponse($e->getMessage());
+                        }
                         $fireGuardLicenseList[] = $updateFireGuard->id;
                     } else {
                         $image = ProfileFunctions::convertImage($value);
@@ -321,23 +335,37 @@ class ProfileController extends Controller
                         $fire_guard_license->refresh();
                         $fireGuardLicenseList[] = $fire_guard_license->id;
                     }
-//                    $fire_guard_license = new FireGuardLicense();
-//                    $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
-//                    $fire_guard_license->state_id = $request->input("state_id");
-////                    $fire_guard_license->fire_guard_license_type = $value["fire_guard_license_type"];
-//                    $fire_guard_license->fire_guard_license_type = $value->fire_guard_license_type;
-//                    $fireGuardLicenseFileName = time() . '.' . $request->file($value->fire_guard_license_image[$key])->getClientOriginalExtension();
-//                    $fire_guard_license_image = $request->file($value->fire_guard_license_image[$key]);
-//                    $fire_guard_license_image->storeAs('fire_guard_license_image', $fireGuardLicenseFileName, 's3');
-//                    $fire_guard_license->fire_guard_license_image = 'fire_guard_license_image/' . $fireGuardLicenseFileName;
-//                    $fire_guard_license->fire_guard_license_expiry = $value->fire_guard_license_expiry;
-//                    $fire_guard_license->save();
                 }
             }
             $stateLicense->update();
-
+//            $user->active = 0;
+//            $user->status = 0;
+//            $user->update();
 
             return ResponseFormatter::successResponse("State licenses added");
+        }
+    }
+
+    public function deleteFireGuardLicense(Request $request, $id): \Illuminate\Http\JsonResponse {
+        $auth_user = UserFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY));
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+
+        $fireGuardLicense = FireGuardLicense::where('user_id', $request->input(Constants::CURRENT_USER_ID_KEY))
+            ->where('id', $id)
+            ->first();
+
+        if ($fireGuardLicense) {
+            try {
+                $s3 = Storage::disk('s3');
+                $s3->delete($fireGuardLicense->fire_guard_license_image);
+                $fireGuardLicense->delete();
+            } catch (\Exception $e) {
+                return ResponseFormatter::errorResponse($e->getMessage());
+            }
+            return ResponseFormatter::successResponse("Fire guard license successfully deleted");
+        } else {
+            return ResponseFormatter::errorResponse("Fire guard license could not be deleted");
         }
     }
 
