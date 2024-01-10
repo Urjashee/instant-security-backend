@@ -338,9 +338,9 @@ class ProfileController extends Controller
                 }
             }
             $stateLicense->update();
-//            $user->active = 0;
-//            $user->status = 0;
-//            $user->update();
+            $user->active = 0;
+            $user->status = 0;
+            $user->update();
 
             return ResponseFormatter::successResponse("State licenses added");
         }
