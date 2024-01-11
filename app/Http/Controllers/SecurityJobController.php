@@ -22,6 +22,7 @@ use App\Models\JobReview;
 use App\Models\SecurityJob;
 use App\Models\State;
 use App\Models\StateLicense;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\UserProfile;
 use Carbon\Carbon;
@@ -182,17 +183,17 @@ class SecurityJobController extends Controller
         $jobDetailsData = array();
         $fireGuardLicenseData = array();
 
-        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::WEB_USER) {
-            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
-            if (!$auth_user)
-                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
-        }
-
-        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::MOBILE_USER) {
-            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
-            if (!$auth_user)
-                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
-        }
+//        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::WEB_USER) {
+//            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
+//            if (!$auth_user)
+//                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+//        }
+//
+//        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::MOBILE_USER) {
+//            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+//            if (!$auth_user)
+//                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+//        }
 
         $jobs = SecurityJob::where("id", $id)->first();
         $job_details = JobDetail::where("job_id", $id)->first();
@@ -485,7 +486,7 @@ class SecurityJobController extends Controller
 
                 return ResponseFormatter::successResponse("Clock-in request sent");
             } else {
-                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes");
+                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes", now());
             }
         }
     }
@@ -515,7 +516,7 @@ class SecurityJobController extends Controller
 
     public function clockOutRequest(Request $request, $job_id): \Illuminate\Http\JsonResponse
     {
-        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::ACCEPTED);
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
@@ -527,7 +528,11 @@ class SecurityJobController extends Controller
                 if ($extraTime) {
                     return ResponseFormatter::unauthorizedResponse("Customer requested you for 1 more hour.");
                 } else {
-                    JobFunctions::clockOutRequests($request, $job_details);
+                    $clock_out = JobFunctions::clockOutRequests($request, $job_details);
+                    if ($clock_out == true)
+                        return ResponseFormatter::successResponse("Clock-out request sent");
+                    else
+                        return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
                 }
             } else {
                 return ResponseFormatter::errorResponse("Can't clock-out");
@@ -562,6 +567,14 @@ class SecurityJobController extends Controller
                 $jobs->invoice_paid = Constants::ACCEPTED;
                 $jobs->update();
                 $job_details->update();
+                $transactions = new Transaction();
+                $transactions->job_id = $job_id;
+                $transactions->customer_id = $jobs->user_id;
+                $transactions->guard_id = $job_details->guard_id;
+                $transactions->transaction_date = strtotime(Carbon::now()->toDateTimeString());
+                $transactions->amount_to_guard = $jobs->total_price * 0.8;
+                $transactions->amount_to_app = $jobs->total_price * 0.2;
+                $transactions->save();
                 return ResponseFormatter::successResponse("Clock-out accepted");
             }
         }
@@ -680,20 +693,12 @@ class SecurityJobController extends Controller
             return ResponseFormatter::successResponse("Job Review added");
         }
     }
-    public function addInvoice(Request $request): \Illuminate\Http\JsonResponse
+
+    public function transactions(): \Illuminate\Http\JsonResponse
     {
-        $invoice = StripeHelper::createInvoices('cus_PApn4QFfH2PQbm');
-        if ($invoice)
-            return ResponseFormatter::successResponse("Create invoice", $invoice);
-        else
-            return ResponseFormatter::errorResponse("Error");
-    }
-
-    public function transactions() {
-        $jobs = SecurityJob::where("job_status", Constants::ACCEPTED)->get();
-        if ($jobs) {
-
-            return ResponseFormatter::successResponse("Transactions", $jobs);
+        $transactions = Transaction::orderBy("create_at", "DESC")->get();
+        if ($transactions) {
+            return ResponseFormatter::successResponse("Transactions", $transactions);
         } else {
             return ResponseFormatter::errorResponse("No transactions");
         }

@@ -63,11 +63,8 @@ class JobFunctions
             $jobDetails = JobDetail::where("guard_id",$user_id)->get();
             foreach ($jobDetails as $jobDetail) {
                 $time2 = Carbon::createFromTimestamp($jobDetail->jobs->event_start);
-
-                if ($time2->diffInMinutes($time1) <= 240) {
+                if (($time2->diffInMinutes($time1) <= 240) && $jobDetail->jobs->status != Constants::CANCELLED) {
                     return (false);
-                } else {
-                    return (true);
                 }
             }
         } else {
@@ -314,7 +311,7 @@ class JobFunctions
             return (false);
         }
     }
-    public static function clockOutRequests($request, $job_details): \Illuminate\Http\JsonResponse
+    public static function clockOutRequests($request, $job_details): bool
     {
         $job_details->clock_out_request = Constants::ACCEPTED;
         $job_details->clock_out_time = $request->input("clock_out_time");
@@ -330,9 +327,9 @@ class JobFunctions
             TwillioHelper::sendSms($job_details->users->phone_no,
                 StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id));
         } catch (\Exception $e) {
-            return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
+            return false;
         }
-        return ResponseFormatter::successResponse("Clock-out request sent");
+        return true;
     }
 
     public static function checkAdditionalTime($job, $job_detail) {
