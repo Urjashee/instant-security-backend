@@ -60,7 +60,12 @@ class AccountController extends Controller
                     $customer_profile = CustomerProfile::where("user_id", $id)->first();
                     $user->status = 1;
                     $user->update();
-                    $customer = StripeHelper::createCustomer($user->email);
+                    try {
+                        $customer = StripeHelper::createCustomer($user->email);
+                    } catch (\Exception $e) {
+                        return ResponseFormatter::errorResponse($e->getMessage());
+                    }
+
                     $customer_profile->customer_id = $customer->id;
                     $customer_profile->update();
                     DB::commit();
