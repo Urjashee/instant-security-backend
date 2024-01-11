@@ -10,7 +10,7 @@ class StripeHelper
 {
     public static function createCustomer($email): \Stripe\Customer
     {
-        $stripe = new StripeClient(Config::get('constants.sk_test'));
+        $stripe = new StripeClient(Config::get('constants.mx_test'));
         return $stripe->customers->create([
             'email' => $email,
         ]);
