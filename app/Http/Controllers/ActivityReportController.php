@@ -42,14 +42,26 @@ class ActivityReportController extends Controller
 
     public function getActivityReport($job_id,Request $request): \Illuminate\Http\JsonResponse
     {
+        $contentData = array();
+        $jobData = array();
         $s3SiteName = Config::get('constants.s3_bucket');
         $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
 
-        $activityReport = ActivityReport::where("job_id",$job_id)->get();
-        if ($activityReport) {
-            return ResponseFormatter::successResponse("Activity report", $activityReport);
+        $activityReports = ActivityReport::where("job_id",$job_id)->get();
+        if ($activityReports) {
+            foreach ($activityReports as $activityReport) {
+                $jobData += [
+                    "job_id" => $activityReport->job_id,
+                    "user_id" => $activityReport->user_id,
+                    "activity_message" => $activityReport->message,
+                    "activity_timestamp" => (string)$activityReport->timestamp,
+                    "activity_image" =>$s3SiteName . $activityReport->image,
+                ];
+                $contentData[] = $jobData;
+            }
+            return ResponseFormatter::successResponse("Activity report", $contentData);
         } else {
             return ResponseFormatter::errorResponse("No activity report");
         }
