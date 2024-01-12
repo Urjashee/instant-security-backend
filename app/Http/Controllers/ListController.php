@@ -60,7 +60,7 @@ class ListController extends Controller
             'fire_arms' => $fireArmsList,
             'osha' => $oshaList,
             'day_of_week' => $dayList,
-            'job_type' => $jobList,
+            'job_status' => $jobList,
         ];
         return ResponseFormatter::successResponse("", $allList);
     }
