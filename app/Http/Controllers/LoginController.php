@@ -69,11 +69,19 @@ class LoginController extends Controller
             return ResponseFormatter::errorResponse($validator->errors());
 
         $user = User::where("email", $request->input("email"))
-            ->where("active", 1)
             ->where("user_role_id", 2)
             ->first();
 
         if ($user) {
+            if ($user->active == 0 && $user->profile == 0 && $user->status == 0)
+                return ResponseFormatter::errorResponse(Constants::USER_EMAIL_NOT_VERIFIED);
+
+            if ($user->active == 0 && $user->status == 1)
+                return ResponseFormatter::errorResponse(Constants::USER_NOT_ACTIVE);
+
+            if ($user->active == 0 && $user->status == 0 && $user->profile == 1)
+                return ResponseFormatter::errorResponse(Constants::USER_NOT_VERIFIED);
+
             if (Hash::check($request->input("password"), $user->password)) {
                 list($token, $refreshToken) = UserFunctions::generateToken($user);
 

@@ -187,11 +187,11 @@ class SecurityJobController extends Controller
         $jobDetailsData = array();
         $fireGuardLicenseData = array();
 
-//        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::WEB_USER) {
-//            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
-//            if (!$auth_user)
-//                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
-//        }
+        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::WEB_USER) {
+            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
+            if (!$auth_user)
+                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        }
 //
 //        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::MOBILE_USER) {
 //            $auth_user = JobFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
@@ -343,7 +343,7 @@ class SecurityJobController extends Controller
                     $job_details->participant_id = $participant_user;
                     $job_details->chat_sid = $job->chat_sid;
                     $job_details->save();
-
+//                    TODO notification
                     return ResponseFormatter::successResponse("Job has been updated");
 
                 } else {
@@ -414,6 +414,7 @@ class SecurityJobController extends Controller
                         StringTemplate::typeMessage(Constants::MSG_CANCELLED, $job->event_name, $request->input(Constants::CURRENT_FIRST_NAME_KEY), $job_id),
                     );
                 }
+//                    TODO notification
                 return ResponseFormatter::successResponse("Job cancelled");
             } catch (\Exception $exception) {
                 DB::rollback();
@@ -489,7 +490,7 @@ class SecurityJobController extends Controller
                 } catch (\Exception $e) {
                     return ResponseFormatter::errorResponse("Clock-in request sent but message couldn't be delivered");
                 }
-
+//                    TODO notification
                 return ResponseFormatter::successResponse("Clock-in request sent");
             } else {
                 return ResponseFormatter::errorResponse("Can't clock in before 30 minutes", now());
@@ -540,6 +541,7 @@ class SecurityJobController extends Controller
                     else
                         return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
                 }
+//                    TODO notification
             } else {
                 return ResponseFormatter::errorResponse("Can't clock-out");
             }

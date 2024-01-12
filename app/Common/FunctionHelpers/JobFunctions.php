@@ -9,6 +9,7 @@ use App\Common\StringTemplate;
 use App\Constants;
 use App\Jobs\JobInformation;
 use App\Models\ActivityReport;
+use App\Models\CustomerProfile;
 use App\Models\FireGuardLicense;
 use App\Models\IncidentReport;
 use App\Models\JobDetail;
@@ -111,6 +112,7 @@ class JobFunctions
     public static function jobDetails($job, $role, $status): array
     {
         $s3SiteName = Config::get('constants.s3_bucket');
+        $customer_profile = CustomerProfile::where("user_id", $job->user_id)->first();
         $activity_logs_data = array();
         $incident_report_data = array();
         $content_data = [
@@ -131,6 +133,9 @@ class JobFunctions
             "additional_hour_request" => !($job->additional_hour_request == 0),
             "additional_hours" => $job->additional_hours == null ? 0 : $job->additional_hours,
             "additional_hours_accepted" => !($job->additional_hours_accepted == 0),
+            "job_posted_by_id" => $job->user_id,
+            "job_posted_by_name" => $job->users->first_name . " " . $job->users->last_name,
+            "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
         ];
         if ($status == 0) {
             $content_data += [
@@ -177,12 +182,12 @@ class JobFunctions
                 "clock_out_request_accepted" => $job->security_jobs->clock_out_request_accepted == 0 ? FALSE : TRUE,
             ];
         }
-        if ($role != 2) {
-            $content_data += [
-                "job_customer_id" => $job->user_id,
-                "job_customer_name" => $job->users->first_name . " " . $job->users->last_name,
-            ];
-        }
+//        if ($role != 2) {
+//            $content_data += [
+//                "job_customer_id" => $job->user_id,
+//                "job_customer_name" => $job->users->first_name . " " . $job->users->last_name,
+//            ];
+//        }
         if ($role == 1) {
             $content_data += [
                 "job_price_paid" => $job->price_paid == 0 ? False : True,
