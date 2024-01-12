@@ -236,7 +236,7 @@ class StripeHelper
         $stripe = new StripeClient(Config::get('constants.mx_test'));
         return $stripe->prices->create([
                 'currency' => 'usd',
-                'unit_amount' => $amount,
+                'unit_amount' => $amount * 100,
                 'product_data' => [
                     'name' => $product_name
                 ],

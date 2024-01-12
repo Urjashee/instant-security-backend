@@ -62,7 +62,11 @@ class SecurityJobController extends Controller
 
         $customer_profile = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($customer_profile) {
-            $cardList = StripeHelper::getPaymentMethodList($customer_profile->customer_id);
+            try {
+                $cardList = StripeHelper::getPaymentMethodList($customer_profile->customer_id);
+            } catch (\Exception $e) {
+                return ResponseFormatter::errorResponse($e->getMessage());
+            }
             if (sizeof($cardList) <= 0) {
                 return ResponseFormatter::errorResponse("Customer doesn't have a payment method");
             } else {
@@ -101,23 +105,23 @@ class SecurityJobController extends Controller
                     $newJobs->chat_sid = $conversation->sid;
                     $newJobs->chat_service_sid = $conversation->chatServiceSid;
                     try {
-                        $createPrice = StripeHelper::createPrice($total_price,$jobType->name);
+                        $createPrice = StripeHelper::createPrice($total_price, $jobType->name);
                     } catch (\Exception $e) {
                         return ResponseFormatter::errorResponse($e->getMessage());
                     }
-                    $newJobs->price_id=$createPrice->id;
+                    $newJobs->price_id = $createPrice->id;
                     try {
-                        $invoiceItem = StripeHelper::createInvoiceItem($customer_profile->customer_id,$createPrice->id);
+                        $invoiceItem = StripeHelper::createInvoiceItem($customer_profile->customer_id, $createPrice->id);
                     } catch (\Exception $e) {
                         return ResponseFormatter::errorResponse($e->getMessage());
                     }
-                    $newJobs->invoice_item_id=$invoiceItem->id;
+                    $newJobs->invoice_item_id = $invoiceItem->id;
                     try {
                         $invoice = StripeHelper::createInvoices($customer_profile->customer_id);
                     } catch (\Exception $e) {
                         return ResponseFormatter::errorResponse($e->getMessage());
                     }
-                    $newJobs->invoice_id=$invoice->id;
+                    $newJobs->invoice_id = $invoice->id;
 
                     $newJobs->save();
                     $newJobs->refresh();
@@ -247,7 +251,7 @@ class SecurityJobController extends Controller
             ->where("security_jobs.osha_license_id", $user->osha_license_type)
             ->where("security_jobs.job_status", Constants::OPEN)
             ->where("security_jobs.event_start", ">", strtotime(Carbon::now()))
-            ->orderBy("security_jobs.created_at","DESC")
+            ->orderBy("security_jobs.created_at", "DESC")
             ->get();
         foreach ($jobsLicenses as $jobsLicense) {
             if (in_array($jobsLicense->fire_guard_license_id, $fire_licenses)) {
