@@ -246,6 +246,8 @@ class SecurityJobController extends Controller
             ->join("security_jobs", "security_jobs.id", "=", "job_fire_license.job_id")
             ->where("security_jobs.osha_license_id", $user->osha_license_type)
             ->where("security_jobs.job_status", Constants::OPEN)
+            ->where("security_jobs.event_start", strtotime(Carbon::now()))
+            ->orderBy("security_jobs.created_at","DESC")
             ->get();
         foreach ($jobsLicenses as $jobsLicense) {
             if (in_array($jobsLicense->fire_guard_license_id, $fire_licenses)) {
