@@ -82,6 +82,8 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                 Route::patch("/clock-out-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
                 Route::post("/request-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'requestMoreTime']);
             });
+            Route::get("/job-type", [\App\Http\Controllers\JobTypeController::class, 'getAllJobTypes']);
+            Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
             Route::group(['prefix' => '/payment'], function () {
                 Route::get("/ephemeral-key", [\App\Http\Controllers\PaymentController::class, 'getEphemeralKey']);
             });
@@ -104,8 +106,6 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
             Route::patch("/account-status/{user_id}", [\App\Http\Controllers\AccountController::class, 'updateAccountStatus']);
             Route::post("/job-type", [\App\Http\Controllers\JobTypeController::class, 'addJobType']);
             Route::patch("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'editJobType']);
-            Route::get("/job-type", [\App\Http\Controllers\JobTypeController::class, 'getAllJobTypes']);
-            Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
 
             Route::patch("/state/{id}", [\App\Http\Controllers\StateController::class, 'changeStateStatus']);
             Route::get("/transactions", [\App\Http\Controllers\SecurityJobController::class, 'transactions']);
