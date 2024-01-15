@@ -27,22 +27,25 @@ class StringTemplate
     {
         switch($type) {
             case(1):
-                return "New Match Request";
+                return "Job selected";
                 break;
             case(2):
-                return "Match Request Accepted";
+                return "Job cancelled";
                 break;
             case(3):
-                return "Match Request Denied";
+                return "Clock-in request";
                 break;
             case(4):
-                return "Match Request Expired";
+                return "Clock-out request";
                 break;
             case(5):
-                return "Join a New Group Chat";
+                return "Request additional time";
                 break;
             case(6):
-                return "New JAM Session";
+                return "Additional time accepted";
+                break;
+            case(7):
+                return "Someone is chatting";
                 break;
             default:
                 return 'Something went wrong.';

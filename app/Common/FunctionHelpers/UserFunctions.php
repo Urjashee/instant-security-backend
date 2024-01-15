@@ -170,6 +170,7 @@ class UserFunctions
             "user_first_name" => $userProfile->user->first_name,
             "user_last_name" => $userProfile->user->last_name,
             "user_email" => $userProfile->user->email,
+            "user_signed_up" => Carbon::createFromTimestamp(strtotime($userProfile->user->created_at))->format('Y-m-d\TH:i:s.uP'),
             "user_phone_no" => $userProfile->user->phone_no,
             "user_street" => $userProfile->address1,
 //                "user_address_2" => $userProfile->address2,

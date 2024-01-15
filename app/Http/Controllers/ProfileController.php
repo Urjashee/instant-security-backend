@@ -492,15 +492,15 @@ class ProfileController extends Controller
     {
         $s3 = Storage::disk('s3');
         $stateLicense = StateLicense::
-//        where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-        where("user_id", 2)
+        where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+//        where("user_id", 2)
             ->where("state_id", $state_id)
             ->first();
 
         if ($stateLicense) {
             $fireLicenses = FireGuardLicense::
-//            where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-            where("user_id", 2)
+            where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+//            where("user_id", 2)
                 ->where("state_id", $state_id)
                 ->get();
             if ($fireLicenses) {

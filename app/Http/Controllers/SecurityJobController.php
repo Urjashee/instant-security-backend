@@ -609,6 +609,7 @@ class SecurityJobController extends Controller
                 $job->additional_hour_request = Constants::ACTIVE;
                 $job->additional_hours = $request->input("extra_time");
                 $job->update();
+//                TODO Push notification
                 return ResponseFormatter::successResponse("Extra time request sent");
             } else {
                 return ResponseFormatter::errorResponse("Extra time request already sent");
@@ -644,6 +645,7 @@ class SecurityJobController extends Controller
 //                    JobFunctions::clockOutRequests($request, $job_details);
                 } else {
                     JobFunctions::checkAdditionalTime($job, $job_details);
+//                    TODO notification
                 }
 
                 return ResponseFormatter::successResponse("Extra time request status updated");
