@@ -286,7 +286,9 @@ class SecurityJobController extends Controller
         if ($request->query("status")) {
             $status = $request->query("status");
         }
-        $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
+        $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+            ->orderBy("job_details.created_at", "DESC")
+            ->get();
         if ($jobs) {
             foreach ($jobs as $job) {
                 $customer_profile = CustomerProfile::where("user_id", $job->jobs->user_id)->first();
@@ -343,7 +345,9 @@ class SecurityJobController extends Controller
                     $job_details->participant_id = $participant_user;
                     $job_details->chat_sid = $job->chat_sid;
                     $job_details->save();
-//                    TODO notification
+
+                    (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                        $job->user_id,1);
                     return ResponseFormatter::successResponse("Job has been updated");
 
                 } else {
@@ -414,7 +418,8 @@ class SecurityJobController extends Controller
                         StringTemplate::typeMessage(Constants::MSG_CANCELLED, $job->event_name, $request->input(Constants::CURRENT_FIRST_NAME_KEY), $job_id),
                     );
                 }
-//                    TODO notification
+                (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                    $job->user_id,2);
                 return ResponseFormatter::successResponse("Job cancelled");
             } catch (\Exception $exception) {
                 DB::rollback();
@@ -490,7 +495,8 @@ class SecurityJobController extends Controller
                 } catch (\Exception $e) {
                     return ResponseFormatter::errorResponse("Clock-in request sent but message couldn't be delivered");
                 }
-//                    TODO notification
+                (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                    $job->user_id,3);
                 return ResponseFormatter::successResponse("Clock-in request sent");
             } else {
                 return ResponseFormatter::errorResponse("Can't clock in before 30 minutes", now());
@@ -527,6 +533,7 @@ class SecurityJobController extends Controller
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
+            $job = SecurityJob::where("id", $job_id)->first();
             $job_details = JobDetail::where("job_id", $job_id)
                 ->where("clock_in_request_accepted", Constants::ACCEPTED)
                 ->first();
@@ -536,12 +543,14 @@ class SecurityJobController extends Controller
                     return ResponseFormatter::unauthorizedResponse("Customer requested you for 1 more hour.");
                 } else {
                     $clock_out = JobFunctions::clockOutRequests($request, $job_details);
-                    if ($clock_out == true)
+                    if ($clock_out == true) {
+                        (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                            $job->user_id, 4);
                         return ResponseFormatter::successResponse("Clock-out request sent");
+                    }
                     else
                         return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
                 }
-//                    TODO notification
             } else {
                 return ResponseFormatter::errorResponse("Can't clock-out");
             }
@@ -645,7 +654,8 @@ class SecurityJobController extends Controller
 //                    JobFunctions::clockOutRequests($request, $job_details);
                 } else {
                     JobFunctions::checkAdditionalTime($job, $job_details);
-//                    TODO notification
+                    (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                        $job->user_id, 6);
                 }
 
                 return ResponseFormatter::successResponse("Extra time request status updated");

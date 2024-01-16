@@ -124,7 +124,7 @@ class JobFunctions
             "job_type" => $job->job_type->name,
             "job_state_id" => $job->state_id,
             "job_state" => $job->state->name,
-            "job_date_time" => Carbon::createFromTimestamp($job->event_start)->format('Y-m-d\TH:i:s.uP'),
+            "job_start_date" => Carbon::createFromTimestamp($job->event_start)->format('Y-m-d\TH:i:s.uP'),
             "job_price" => $job->price,
             "job_max_price" => $job->max_price,
             "job_start_time" => Carbon::createFromTimestamp($job->event_start)->format('Y-m-d\TH:i:s.uP'),
