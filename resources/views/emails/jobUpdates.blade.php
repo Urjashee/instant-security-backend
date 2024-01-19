@@ -8,7 +8,7 @@
         <p class="p1">
             {{ $message }}
         </p>
-
+        <br><br><br>
         <h2>
             Thanks<br/>
             Team Instant Security

@@ -348,6 +348,7 @@ class JobFunctions
         $job->total_price = $hours * $job->price;
         $job->update();
     }
+
     public static function jobCompleted($job_id): bool
     {
         $job = SecurityJob::where("id", $job_id)
@@ -358,6 +359,26 @@ class JobFunctions
         } else {
             return (false);
         }
+    }
+
+    public static function pagination($request): array
+    {
+        $take = Constants::TAKE;
+        $page = $request->query("page");
+        $page ? $page = $request->query("page") : $page = Constants::DEFAULT_PAGE;
+        $skip = ($page - 1) * $take;
+
+        return [$skip, $take, $page];
+    }
+
+    public static function pageDetails($page, $total): array
+    {
+        $take = Constants::TAKE;
+        return [
+            "total" => $total,
+            "page" => $page,
+            "last_page" => ceil($total / $take)
+        ];
     }
 
 }

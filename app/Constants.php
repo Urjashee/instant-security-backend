@@ -27,6 +27,8 @@ class Constants
     const MSG_CANCELLED = 1;
     const MSG_CLOCK_IN = 2;
     const MSG_CLOCK_OUT = 3;
+    const APPROVED_ACCOUNT = 4;
+    const DENIED_ACCOUNT = 5;
     const ACCEPTED = 1;
     const DENIED = 0;
     const ACTIVE = 1;
@@ -42,4 +44,6 @@ class Constants
     const USER_NOT_ACTIVE = "Account is deactivated. Please contact your admin.";
     const USER_EMAIL_NOT_VERIFIED = "User email not verified";
     const USER_NOT_VERIFIED = "User is being reviewed by Admin";
+    const TAKE = 20;
+    const DEFAULT_PAGE = 1;
 }

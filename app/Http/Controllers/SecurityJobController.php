@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Common\FunctionHelpers\JobFunctions;
+use App\Common\FunctionHelpers\Pagination;
 use App\Common\FunctionHelpers\StripeHelper;
 use App\Common\FunctionHelpers\TwillioHelper;
 use App\Common\ResponseFormatter;
@@ -236,6 +237,9 @@ class SecurityJobController extends Controller
         $job_lists = array();
         $job_lists_unique = array();
 
+        $offset = $request->query("offset");
+        $limit = $request->query("limit");
+
         $user = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $fire_guard_licenses = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
         $user_state_licenses = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->get();
@@ -246,13 +250,25 @@ class SecurityJobController extends Controller
         foreach ($fire_guard_licenses as $fire_guard_license) {
             $fire_licenses[] = $fire_guard_license->fire_guard_license_type;
         }
-        $jobsLicenses = JobFireLicense::select("*")
+
+        $jobsLicense = JobFireLicense::select("*")
             ->join("security_jobs", "security_jobs.id", "=", "job_fire_license.job_id")
             ->where("security_jobs.osha_license_id", $user->osha_license_type)
             ->where("security_jobs.job_status", Constants::OPEN)
             ->where("security_jobs.event_start", ">", strtotime(Carbon::now()))
             ->orderBy("security_jobs.created_at", "DESC")
-            ->get();
+//            ->get()
+        ;
+        if ($offset && $limit) {
+            $jobsLicense->offset($offset);
+            $jobsLicense->limit($limit);
+        } else {
+            $jobsLicense->offset(0);
+            $jobsLicense->limit(Constants::TAKE);
+        }
+
+        $jobsLicenses = $jobsLicense->get();
+
         foreach ($jobsLicenses as $jobsLicense) {
             if (in_array($jobsLicense->fire_guard_license_id, $fire_licenses)) {
                 $job_lists[] = $jobsLicense->job_id;
@@ -476,9 +492,9 @@ class SecurityJobController extends Controller
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
             $job = SecurityJob::where("id", $job_id)->first();
-            $time1 = Carbon::createFromTimestamp($request->input("clock_in_time"));
-            $time2 = Carbon::createFromTimestamp($job->event_start);
-            if ($time2->diffInMinutes($time1) <= 30) {
+            $time1 = $request->input("clock_in_time");
+            $time2 = $job->event_start;
+            if (($time2 - $time1)/60 <= 30) {
                 $job_details = JobDetail::where("job_id", $job_id)->first();
                 $job_details->clock_in_request = Constants::ACCEPTED;
                 $job_details->clock_in_time = $request->input("clock_in_time");
@@ -499,7 +515,7 @@ class SecurityJobController extends Controller
                     $job->user_id,3);
                 return ResponseFormatter::successResponse("Clock-in request sent");
             } else {
-                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes", now());
+                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes", ($time2 - $time1)/60);
             }
         }
     }

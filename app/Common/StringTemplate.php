@@ -13,10 +13,16 @@ class StringTemplate
                 return $job . " has been cancelled by " . $guard;
                 break;
             case(2):
-                return "You have received a clock-in request for " . $job . " Click the link " . Config::get('constants.web_url') . "/job-detail/" . $job_id;
+                return "You have received a clock-in request for " . $job . " Click the link " . Config::get('constants.web_url') . "job-detail/" . $job_id;
                 break;
             case(3):
-                return "You have received a clock-out request for " . $job . " Click the link " . Config::get('constants.web_url') . "/job-detail/" . $job_id;
+                return "You have received a clock-out request for " . $job . " Click the link " . Config::get('constants.web_url') . "job-detail/" . $job_id;
+                break;
+            case(4):
+                return "Your account has been approved you can login now.";
+                break;
+            case(5):
+                return "Your account has been denied you can login now to change the following:\n " . $job;
                 break;
             default:
                 return 'Something went wrong.';

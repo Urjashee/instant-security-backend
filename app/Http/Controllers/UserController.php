@@ -142,14 +142,18 @@ class UserController extends Controller
 
     public function getAllUsers(): \Illuminate\Http\JsonResponse
     {
-        $users = User::where("user_role_id",Constants::MOBILE_USER)->get();
+        $users = User::where("user_role_id",Constants::MOBILE_USER)
+            ->where("profile",1)
+            ->get();
         $userDetails = UserFunctions::getUser($users);
         return ResponseFormatter::successResponse("Users", $userDetails);
     }
 
     public function getAllCustomers(): \Illuminate\Http\JsonResponse
     {
-        $users = User::where("user_role_id",Constants::WEB_USER)->get();
+        $users = User::where("user_role_id",Constants::WEB_USER)
+            ->where("profile",1)
+            ->get();
         $userDetails = UserFunctions::getUser($users);
         return ResponseFormatter::successResponse("Users", $userDetails);
     }

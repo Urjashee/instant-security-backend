@@ -32,6 +32,6 @@ class JobInfo extends Mailable
      */
     public function build()
     {
-        return $this->subject('Job Update')->markdown('emails.jobUpdates');
+        return $this->subject('Instant Security')->markdown('emails.jobUpdates');
     }
 }

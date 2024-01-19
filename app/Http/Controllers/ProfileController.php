@@ -401,7 +401,12 @@ class ProfileController extends Controller
         if (!$userProfile) {
             $userProfileDocument = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
                 ->first();
+            $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
             $userProfileDocument->terms_and_condition = 1;
+            $user->status = 0;
+            $user->active = 0;
+            $user->profile = 1;
+            $user->update();
             $userProfileDocument->update();
 
             return ResponseFormatter::successResponse("Terms and Condition added");
