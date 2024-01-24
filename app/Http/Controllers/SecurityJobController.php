@@ -494,28 +494,35 @@ class SecurityJobController extends Controller
             $job = SecurityJob::where("id", $job_id)->first();
             $time1 = $request->input("clock_in_time");
             $time2 = $job->event_start;
-            if (($time2 - $time1)/60 <= 30) {
+            if ($job->event_end > $time1) {
+                return ResponseFormatter::errorResponse("Clock-in time cannot be greater than event end time");
+            }
+            if ((($time2 - $time1)/60 <= 30)) {
                 $job_details = JobDetail::where("job_id", $job_id)->first();
-                $job_details->clock_in_request = Constants::ACCEPTED;
-                $job_details->clock_in_time = $request->input("clock_in_time");
-                $job_details->clock_in_latitude = $request->input("clock_in_latitude");
-                $job_details->clock_in_longitude = $request->input("clock_in_longitude");
-                $job_details->update();
-                JobInformation::dispatch(
-                    $job->users->email,
-                    StringTemplate::typeMessage(Constants::MSG_CLOCK_IN, $job->event_name, null, $job->id),
-                );
-                try {
-                    TwillioHelper::sendSms($job->users->phone_no,
-                        StringTemplate::typeMessage(Constants::MSG_CLOCK_IN, $job->event_name, null, $job->id));
-                } catch (\Exception $e) {
-                    return ResponseFormatter::errorResponse("Clock-in request sent but message couldn't be delivered");
+                if ($job_details->clock_in_request_accepted == Constants::ACCEPTED) {
+                    return ResponseFormatter::errorResponse("Clock in request already accepted");
+                } else {
+                    $job_details->clock_in_request = Constants::ACCEPTED;
+                    $job_details->clock_in_time = $request->input("clock_in_time");
+                    $job_details->clock_in_latitude = $request->input("clock_in_latitude");
+                    $job_details->clock_in_longitude = $request->input("clock_in_longitude");
+                    $job_details->update();
+                    JobInformation::dispatch(
+                        $job->users->email,
+                        StringTemplate::typeMessage(Constants::MSG_CLOCK_IN, $job->event_name, null, $job->id),
+                    );
+                    try {
+                        TwillioHelper::sendSms($job->users->phone_no,
+                            StringTemplate::typeMessage(Constants::MSG_CLOCK_IN, $job->event_name, null, $job->id));
+                    } catch (\Exception $e) {
+                        return ResponseFormatter::errorResponse("Clock-in request sent but message couldn't be delivered");
+                    }
+                    (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                        $job->user_id, 3);
+                    return ResponseFormatter::successResponse("Clock-in request sent");
                 }
-                (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
-                    $job->user_id,3);
-                return ResponseFormatter::successResponse("Clock-in request sent");
             } else {
-                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes", ($time2 - $time1)/60);
+                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes");
             }
         }
     }

@@ -10,6 +10,7 @@ use App\Jobs\SendMail;
 use App\Models\CustomerProfile;
 use App\Models\FireGuardLicense;
 use App\Models\Roles;
+use App\Models\State;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
@@ -49,6 +50,10 @@ class UserController extends Controller
         $siteName = Config::get('constants.url');
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors());
+
+        if (!State::where("id", $request->input("state"))
+            ->where("active", 1)->first())
+            return ResponseFormatter::errorResponse("Not an active state");
 
         $user = User::where("email", $request->input("email"))->first();
         if ($user) {

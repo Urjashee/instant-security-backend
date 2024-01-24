@@ -9,6 +9,7 @@ use App\Common\ResponseFormatter;
 use App\Constants;
 use App\Models\CustomerProfile;
 use App\Models\FireGuardLicense;
+use App\Models\State;
 use App\Models\StateLicense;
 use App\Models\User;
 use App\Models\UserProfile;
@@ -212,6 +213,10 @@ class ProfileController extends Controller
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors());
 
+        if (!State::where("id", $request->input("state_id"))
+            ->where("active", Constants::ACTIVE)->first())
+            return ResponseFormatter::errorResponse("Not an active state");
+
         $getStateLicense = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
             ->where("state_id", $request->input("state_id"))
             ->first();
@@ -268,6 +273,10 @@ class ProfileController extends Controller
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors());
+
+        if (!State::where("id", $request->input("state_id"))
+            ->where("active", Constants::ACTIVE)->first())
+            return ResponseFormatter::errorResponse("Not an active state");
 
         $stateLicense = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
             ->where("state_id", $request->input("state_id"))
