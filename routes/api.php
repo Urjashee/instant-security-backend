@@ -23,13 +23,12 @@ Route::post("/reset-password", [\App\Http\Controllers\ForgotPasswordController::
 Route::post("/verify-account", [\App\Http\Controllers\AccountController::class, 'verifyAccount']);
 Route::post("/send", [\App\Http\Controllers\UserController::class, 'sendEmail']);
 Route::get("/refresh-token", [\App\Http\Controllers\LoginController::class, 'refreshToken'])->middleware("check_refresh_token");
-
+Route::get("/list/config", [\App\Http\Controllers\ListController::class, 'getAllLists']);
 //Stripe
 Route::get("/invoice", [\App\Http\Controllers\SecurityJobController::class, 'addInvoice']);
 
 Route::group(["middleware" => ["jwt.verify"]], function () {
     //Lists
-    Route::get("/list/config", [\App\Http\Controllers\ListController::class, 'getAllLists']);
     Route::get("/list/firearms/{id}", [\App\Http\Controllers\ListController::class, 'getFireArms']);
     //Faqs
     Route::group(['prefix' => '/faq'], function () {
