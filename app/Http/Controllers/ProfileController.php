@@ -96,6 +96,10 @@ class ProfileController extends Controller
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors());
 
+        if (!State::where("id", $request->input("state"))
+            ->where("active", 1)->first())
+            return ResponseFormatter::errorResponse("Not an active state");
+
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
         $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
@@ -105,6 +109,7 @@ class ProfileController extends Controller
                 DB::beginTransaction();
 
                 $user->phone_no = $request->input("phone_number");
+                $user->state_id = $request->input("state");
                 $user->update();
 
                 if ($request->has('user_profile_image')) {
@@ -128,7 +133,7 @@ class ProfileController extends Controller
                 return ResponseFormatter::successResponse("Personal info updated");
             } catch (\Exception $exception) {
                 DB::rollback();
-                return ResponseFormatter::errorResponse("Error in profile creation");
+                return ResponseFormatter::errorResponse("Error in profile updating", $exception);
             }
 
         } else {
