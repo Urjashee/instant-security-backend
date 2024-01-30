@@ -21,7 +21,7 @@ class ActivityReportController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
         if (!$auth_user)

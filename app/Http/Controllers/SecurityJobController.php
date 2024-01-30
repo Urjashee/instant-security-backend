@@ -52,7 +52,7 @@ class SecurityJobController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         if (!State::where("id", $request->input("state_id"))
             ->where("active", 1)->first())
@@ -627,7 +627,7 @@ class SecurityJobController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
         $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
@@ -656,7 +656,7 @@ class SecurityJobController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
         if (!$auth_user)
@@ -716,7 +716,7 @@ class SecurityJobController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $job_details = JobDetail::where("job_id", $request->input("job_id"))->first();
         $auth_user = JobFunctions::authenticateUser($request->input("job_id"), $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);

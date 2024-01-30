@@ -94,7 +94,7 @@ class ProfileController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         if (!State::where("id", $request->input("state"))
             ->where("active", 1)->first())
@@ -148,7 +148,7 @@ class ProfileController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
@@ -178,7 +178,7 @@ class ProfileController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
@@ -216,7 +216,7 @@ class ProfileController extends Controller
 
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         if (!State::where("id", $request->input("state_id"))
             ->where("active", Constants::ACTIVE)->first())
@@ -277,7 +277,7 @@ class ProfileController extends Controller
         $fireGuardLicenseList = array();
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         if (!State::where("id", $request->input("state_id"))
             ->where("active", Constants::ACTIVE)->first())
@@ -391,7 +391,7 @@ class ProfileController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
@@ -455,7 +455,7 @@ class ProfileController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $customer = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($customer) {

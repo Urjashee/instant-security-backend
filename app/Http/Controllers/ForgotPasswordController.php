@@ -25,7 +25,7 @@ class ForgotPasswordController extends Controller
         ]);
         $siteName = Config::get('constants.url');
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $user = User::where("email", $request->input("email"))
             ->where("active", 1)
@@ -65,7 +65,7 @@ class ForgotPasswordController extends Controller
         ]);
         $token = $request->input("token");
         if ($validator->fails())
-            return ResponseFormatter::errorResponse( $validator->errors());
+            return ResponseFormatter::errorResponse( $validator->errors()->first());
            // return response()->json(["success" => false, "status" => "error", "message" => "Inputs missing"]);
 
         $password = PasswordReset::where("token", $token)

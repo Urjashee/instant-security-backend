@@ -49,7 +49,7 @@ class UserController extends Controller
         ]);
         $siteName = Config::get('constants.url');
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         if (!State::where("id", $request->input("state"))
             ->where("active", 1)->first())
@@ -93,7 +93,7 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $user = User::where("email", $request->input("email"))->first();
         if ($user) {

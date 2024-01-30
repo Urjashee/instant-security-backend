@@ -19,7 +19,7 @@ class JobTypeController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $job_type = new JobType();
         $job_type->state_id = $request->input("state_id");
@@ -39,7 +39,7 @@ class JobTypeController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $job_type = JobType::where("id", $id)->first();
         if ($job_type) {

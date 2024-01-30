@@ -25,7 +25,7 @@ class AccountController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $token = PasswordReset::where("token", $request->input("token"))->first();
         if (!$token) {
@@ -59,7 +59,7 @@ class AccountController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $user = User::where("id", $id)->first();
         $user_profile = UserProfile::where("user_id", $id)->first();

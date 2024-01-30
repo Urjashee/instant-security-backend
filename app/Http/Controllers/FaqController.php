@@ -17,7 +17,7 @@ class FaqController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $faqs = new Faq();
         $faqs->question = $request->input("question");

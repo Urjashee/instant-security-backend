@@ -66,7 +66,7 @@ class LoginController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $user = User::where("email", $request->input("email"))
             ->where("user_role_id", 2)
@@ -102,7 +102,7 @@ class LoginController extends Controller
         ]);
 
         if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors());
+            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $user = User::where("email", $request->input("email"))
             ->where("active", 1)
@@ -137,7 +137,7 @@ class LoginController extends Controller
             "device_token" => "required",
         ]);
         if ($validator->fails())
-            return ResponseFormatter::errorResponse( $validator->errors());
+            return ResponseFormatter::errorResponse( $validator->errors()->first());
 
         $deviceToken = DeviceTokens::where('device_token',$request->input("device_token"));
         if ($deviceToken) {
