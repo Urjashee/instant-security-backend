@@ -48,6 +48,7 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                 Route::post("/state-license/edit", [\App\Http\Controllers\ProfileController::class, 'editStateLicense']);
                 Route::put("/bank-information/edit", [\App\Http\Controllers\ProfileController::class, 'addBanking']);
                 Route::patch("/terms-and-condition", [\App\Http\Controllers\ProfileController::class, 'addDocument']);
+                Route::patch("/submit", [\App\Http\Controllers\ProfileController::class, 'addSubmit']);
                 Route::delete("/fire-guard-license/{id}", [\App\Http\Controllers\ProfileController::class, 'deleteFireGuardLicense']);
                 Route::delete("/delete-state-licenses/{id}", [\App\Http\Controllers\ProfileController::class, 'deleteStateLicense']);
             });
