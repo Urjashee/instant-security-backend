@@ -114,13 +114,17 @@ class UserController extends Controller
             $fileNameProfile = time().'.'.$request->file('profile_image')->getClientOriginalExtension();
             $fileNameState = time().'.'.$request->file('state_id_image')->getClientOriginalExtension();
 
-            $profile_images = $request->file("profile_image");
-            $profile_images->storeAs('web_profile_images', $fileNameProfile, 's3');
-            $newCustomerProfile->profile_image = 'web_profile_images/' . $fileNameProfile;
+            if ($request->has("profile_image")) {
+                $profile_images = $request->file("profile_image");
+                $profile_images->storeAs('web_profile_images', $fileNameProfile, 's3');
+                $newCustomerProfile->profile_image = 'web_profile_images/' . $fileNameProfile;
+            }
 
-            $profile_images = $request->file("state_id_image");
-            $profile_images->storeAs('web_state_id_images', $fileNameState, 's3');
-            $newCustomerProfile->state_id_image = 'web_state_id_images/' . $fileNameState;
+            if ($request->has("state_id_image")) {
+                $profile_images = $request->file("state_id_image");
+                $profile_images->storeAs('web_state_id_images', $fileNameState, 's3');
+                $newCustomerProfile->state_id_image = 'web_state_id_images/' . $fileNameState;
+            }
 
             $newCustomerProfile->save();
 
