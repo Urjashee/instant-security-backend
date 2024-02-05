@@ -111,14 +111,14 @@ class UserController extends Controller
             $newCustomerProfile->city = $request->input("city");
             $newCustomerProfile->zipcode = $request->input("zipcode");
 
-            if ($request->has("profile_image")) {
+            if ($request->has("profile_image") && ($request->file("profile_image")) != null) {
                 $fileNameProfile = time().'.'.$request->file('profile_image')->getClientOriginalExtension();
                 $profile_images = $request->file("profile_image");
                 $profile_images->storeAs('web_profile_images', $fileNameProfile, 's3');
                 $newCustomerProfile->profile_image = 'web_profile_images/' . $fileNameProfile;
             }
 
-            if ($request->has("state_id_image")) {
+            if ($request->has("state_id_image") && ($request->file("state_id_image")) != null) {
                 $fileNameState = time().'.'.$request->file('state_id_image')->getClientOriginalExtension();
                 $profile_images = $request->file("state_id_image");
                 $profile_images->storeAs('web_state_id_images', $fileNameState, 's3');
