@@ -89,7 +89,7 @@ class UserController extends Controller
             "city" => "required",
             "zipcode" => "numeric",
             "password" => "min:8|alpha_num",
-            "state_id_image" => "required",
+//            "state_id_image" => "required",
         ]);
 
         if ($validator->fails())
@@ -111,16 +111,15 @@ class UserController extends Controller
             $newCustomerProfile->city = $request->input("city");
             $newCustomerProfile->zipcode = $request->input("zipcode");
 
-            $fileNameProfile = time().'.'.$request->file('profile_image')->getClientOriginalExtension();
-            $fileNameState = time().'.'.$request->file('state_id_image')->getClientOriginalExtension();
-
             if ($request->has("profile_image")) {
+                $fileNameProfile = time().'.'.$request->file('profile_image')->getClientOriginalExtension();
                 $profile_images = $request->file("profile_image");
                 $profile_images->storeAs('web_profile_images', $fileNameProfile, 's3');
                 $newCustomerProfile->profile_image = 'web_profile_images/' . $fileNameProfile;
             }
 
             if ($request->has("state_id_image")) {
+                $fileNameState = time().'.'.$request->file('state_id_image')->getClientOriginalExtension();
                 $profile_images = $request->file("state_id_image");
                 $profile_images->storeAs('web_state_id_images', $fileNameState, 's3');
                 $newCustomerProfile->state_id_image = 'web_state_id_images/' . $fileNameState;
