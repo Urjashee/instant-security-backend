@@ -385,13 +385,13 @@ class ProfileController extends Controller
 
     public function addBanking(Request $request): \Illuminate\Http\JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            "account_number" => "numeric",
-            "routing" => "required",
-        ]);
-
-        if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors()->first());
+//        $validator = Validator::make($request->all(), [
+//            "account_number" => "numeric",
+//            "routing" => "required",
+//        ]);
+//
+//        if ($validator->fails())
+//            return ResponseFormatter::errorResponse($validator->errors()->first());
 
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 

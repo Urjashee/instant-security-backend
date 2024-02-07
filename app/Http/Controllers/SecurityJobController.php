@@ -496,8 +496,9 @@ class SecurityJobController extends Controller
             $time2 = $job->event_start;
             if ($job->event_end > $time1) {
                 return ResponseFormatter::errorResponse("Clock-in time cannot be greater than event end time");
-            }
-            if ((($time2 - $time1)/60 <= 30)) {
+            } if ((($time2 - $time1)/60 >= 30)) {
+                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes");
+            } else {
                 $job_details = JobDetail::where("job_id", $job_id)->first();
                 if ($job_details->clock_in_request_accepted == Constants::ACCEPTED) {
                     return ResponseFormatter::errorResponse("Clock in request already accepted");
@@ -521,8 +522,6 @@ class SecurityJobController extends Controller
                         $job->user_id, 3);
                     return ResponseFormatter::successResponse("Clock-in request sent");
                 }
-            } else {
-                return ResponseFormatter::errorResponse("Can't clock in before 30 minutes");
             }
         }
     }

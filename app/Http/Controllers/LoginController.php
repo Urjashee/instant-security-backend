@@ -86,7 +86,8 @@ class LoginController extends Controller
                 list($token, $refreshToken) = UserFunctions::generateToken($user);
 
                 return ResponseFormatter::successResponse("Login successful.",
-                    array("token" => (string)$token, "refresh_token" => (string)$refreshToken));
+                    array("token" => (string)$token, "refresh_token" => (string)$refreshToken))
+                    ->cookie('token', (string)$token, 60);
             } else {
                 return ResponseFormatter::errorResponse( 'The password entered is incorrect');
             }
@@ -114,7 +115,8 @@ class LoginController extends Controller
                 list($token, $refreshToken) = UserFunctions::generateToken($user);
 
                 return ResponseFormatter::successResponse("Login successful.",
-                    array("token" => (string)$token, "refresh_token" => (string)$refreshToken));
+                    array("token" => (string)$token, "refresh_token" => (string)$refreshToken))
+                    ->cookie('token', (string)$token, 60);
             } else {
                 return ResponseFormatter::errorResponse( 'The password entered is incorrect');
             }
