@@ -17,7 +17,6 @@ class ActivityReportController extends Controller
         $validator = Validator::make($request->all(), [
             "activity_log_message" => "required",
             "activity_log_timestamp" => "required",
-            "activity_log_image" => "required",
         ]);
 
         if ($validator->fails())
