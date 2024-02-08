@@ -494,7 +494,7 @@ class SecurityJobController extends Controller
             $job = SecurityJob::where("id", $job_id)->first();
             $time1 = $request->input("clock_in_time");
             $time2 = $job->event_start;
-            if ($job->event_end < $time1) {
+            if ($time1 > $job->event_end) {
                 return ResponseFormatter::errorResponse("Clock-in time cannot be greater than event end time");
             } if ((($time2 - $time1)/60 >= 30)) {
                 return ResponseFormatter::errorResponse("Can't clock in before 30 minutes");
@@ -596,7 +596,7 @@ class SecurityJobController extends Controller
             }
             if ($approval == Constants::ACCEPTED) {
                 $jobs = SecurityJob::where("id", $job_id)->first();
-                $jobs->status = Constants::COMPLETED;
+                $jobs->job_status = Constants::COMPLETED;
                 $job_details->clock_out_request_accepted = Constants::ACCEPTED;
                 try {
                     StripeHelper::payInvoices($jobs->invoice_id);
