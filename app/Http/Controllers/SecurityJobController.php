@@ -325,14 +325,14 @@ class SecurityJobController extends Controller
         $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($status == Constants::ACCEPTED) {
             $auth_user = JobFunctions::checkUserStatus($request->input(Constants::CURRENT_USER_ID_KEY));
-            $next_job_status = JobFunctions::nextJobStatus($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
+//            $next_job_status = JobFunctions::nextJobStatus($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
             $license_expiry = JobFunctions::licenceExpiry($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
             if (!$auth_user) {
                 return ResponseFormatter::unauthorizedResponse("User status is inactive");
             }
-            if (!$next_job_status) {
-                return ResponseFormatter::errorResponse(StringTemplate::response(1));
-            }
+//            if (!$next_job_status) {
+//                return ResponseFormatter::errorResponse(StringTemplate::response(1));
+//            }
             if (!$license_expiry) {
                 return ResponseFormatter::errorResponse(StringTemplate::response(2));
             } else {
