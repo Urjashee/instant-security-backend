@@ -64,7 +64,7 @@ class JobFunctions
             $jobDetails = JobDetail::where("guard_id",$user_id)->get();
             foreach ($jobDetails as $jobDetail) {
                 $time2 = Carbon::createFromTimestamp($jobDetail->jobs->event_start);
-                if (($time2->diffInMinutes($time1) <= 240) && ($jobDetail->jobs->status != Constants::CANCELLED || $jobDetail->jobs->status != Constants::COMPLETED)) {
+                if (($time2->diffInMinutes($time1) <= 240) && ($jobDetail->jobs->job_status != Constants::CANCELLED || $jobDetail->jobs->job_status != Constants::COMPLETED)) {
                     return (false);
                 }
             }
@@ -285,7 +285,7 @@ class JobFunctions
             ];
         }
         if ($status == 1) {
-            if ($job_details->clock_in_request == 1 && $job_details->clock_in_request_accepted == 1) {
+            if ($job_details->clock_in_request == 1 && $job_details->clock_in_request_accepted == 1 && $status != 2) {
                 $content_data += [
                     "job_status_id" => 4,
                     "job_status_name" => ConfigList::jobType(4),
