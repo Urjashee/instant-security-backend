@@ -307,9 +307,12 @@ class SecurityJobController extends Controller
             ->get();
         if ($jobs) {
             foreach ($jobs as $job) {
-                $customer_profile = CustomerProfile::where("user_id", $job->jobs->user_id)->first();
-                $view_jobs_data = JobFunctions::viewJobs($job->jobs, $customer_profile, $status, $job);
-                $content_data[] = $view_jobs_data;
+                $security_jobs = SecurityJob::where("id", $job->job_id)->where("job_status", $status)->first();
+                if ($security_jobs) {
+                    $customer_profile = CustomerProfile::where("user_id", $security_jobs->user_id)->first();
+                    $view_jobs_data = JobFunctions::viewJobs($security_jobs, $customer_profile, $status, $job);
+                    $content_data[] = $view_jobs_data;
+                }
             }
             return ResponseFormatter::successResponse("Jobs", $content_data);
         } else {

@@ -285,7 +285,7 @@ class JobFunctions
             ];
         }
         if ($status == 1) {
-            if ($job_details->clock_in_request == 1 && $job_details->clock_in_request_accepted == 1 && $status != 2) {
+            if ($job_details->clock_in_request == 1 && $job_details->clock_in_request_accepted == 1) {
                 $content_data += [
                     "job_status_id" => 4,
                     "job_status_name" => ConfigList::jobType(4),
