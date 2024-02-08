@@ -64,7 +64,7 @@ class JobFunctions
             $jobDetails = JobDetail::where("guard_id",$user_id)->get();
             foreach ($jobDetails as $jobDetail) {
                 $time2 = Carbon::createFromTimestamp($jobDetail->jobs->event_start);
-                if (($time2->diffInMinutes($time1) <= 240) && $jobDetail->jobs->status != Constants::CANCELLED) {
+                if (($time2->diffInMinutes($time1) <= 240) && ($jobDetail->jobs->status != Constants::CANCELLED || $jobDetail->jobs->status != Constants::COMPLETED)) {
                     return (false);
                 }
             }
