@@ -42,7 +42,7 @@ class SecurityJobController extends Controller
             "job_type_id" => "required",
             "event_name" => "required",
             "street1" => "required",
-            "street2" => "required",
+//            "street2" => "required",
             "city" => "required",
             "zipcode" => "required",
             "event_start" => "required",
@@ -494,7 +494,7 @@ class SecurityJobController extends Controller
             $job = SecurityJob::where("id", $job_id)->first();
             $time1 = $request->input("clock_in_time");
             $time2 = $job->event_start;
-            if ($job->event_end > $time1) {
+            if ($job->event_end < $time1) {
                 return ResponseFormatter::errorResponse("Clock-in time cannot be greater than event end time");
             } if ((($time2 - $time1)/60 >= 30)) {
                 return ResponseFormatter::errorResponse("Can't clock in before 30 minutes");
