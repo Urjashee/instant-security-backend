@@ -53,7 +53,7 @@ class ActivityReportController extends Controller
         $activityReports = ActivityReport::where("job_id",$job_id)->get();
         if ($activityReports) {
             foreach ($activityReports as $activityReport) {
-                $jobData += [
+                $jobData[] = [
                     "job_id" => $activityReport->job_id,
                     "user_id" => $activityReport->user_id,
                     "activity_message" => $activityReport->message,
