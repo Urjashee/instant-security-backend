@@ -16,12 +16,12 @@ use Illuminate\Database\Eloquent\Model;
 class Transaction extends Model
 {
     use HasFactory;
-    protected $with = ["customer", "guard"];
+    protected $with = ["customer", "guard_user"];
     public function customer()
     {
         return $this->belongsTo(User::class, "customer_id");
     }
-    public function guard()
+    public function guard_user()
     {
         return $this->belongsTo(User::class, "guard_id");
     }

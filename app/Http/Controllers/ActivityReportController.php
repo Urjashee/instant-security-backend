@@ -31,10 +31,12 @@ class ActivityReportController extends Controller
         $activity->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
         $activity->message = $request->input("activity_log_message");
         $activity->timestamp = $request->input("activity_log_timestamp");
-        $activityFileName = time() . '.' . $request->file("activity_log_image")->getClientOriginalExtension();
-        $activity_log_image = $request->file("activity_log_image");
-        $activity_log_image->storeAs('activity_log_image', $activityFileName, 's3');
-        $activity->image = 'activity_log_image/' . $activityFileName;
+        if ($request->has("activity_log_image")) {
+            $activityFileName = time() . '.' . $request->file("activity_log_image")->getClientOriginalExtension();
+            $activity_log_image = $request->file("activity_log_image");
+            $activity_log_image->storeAs('activity_log_image', $activityFileName, 's3');
+            $activity->image = 'activity_log_image/' . $activityFileName;
+        }
         $activity->save();
         return ResponseFormatter::successResponse("Activity log added");
     }
@@ -56,7 +58,7 @@ class ActivityReportController extends Controller
                     "user_id" => $activityReport->user_id,
                     "activity_message" => $activityReport->message,
                     "activity_timestamp" => (string)$activityReport->timestamp,
-                    "activity_image" =>$s3SiteName . $activityReport->image,
+                    "activity_image" => $activityReport->image == null ? "" : $s3SiteName . $activityReport->image,
                 ];
                 $contentData[] = $jobData;
             }

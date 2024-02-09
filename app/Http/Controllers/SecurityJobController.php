@@ -701,10 +701,12 @@ class SecurityJobController extends Controller
             $incident_report->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
             $incident_report->name = $request->input("incident_name");
             $incident_report->message = $request->input("incident_message");
-            $imageFileName = time() . '.' . $request->file('incident_image')->getClientOriginalExtension();
-            $profile_image = $request->file("incident_image");
-            $profile_image->storeAs('incident_image', $imageFileName, 's3');
-            $incident_report->image = 'incident_image/' . $imageFileName;
+            if ($request->has("incident_image")) {
+                $imageFileName = time() . '.' . $request->file('incident_image')->getClientOriginalExtension();
+                $profile_image = $request->file("incident_image");
+                $profile_image->storeAs('incident_image', $imageFileName, 's3');
+                $incident_report->image = 'incident_image/' . $imageFileName;
+            }
             $incident_report->save();
             return ResponseFormatter::successResponse("Incident report added");
         }
