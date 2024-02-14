@@ -453,7 +453,7 @@ class ProfileController extends Controller
     public function editCustomerProfile(Request $request): \Illuminate\Http\JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            "email" => "required",
+//            "email" => "required",
             "first_name" => "required",
             "last_name" => "required",
             "phone_number" => "required",
@@ -464,6 +464,10 @@ class ProfileController extends Controller
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
+
+        if (!State::where("id", $request->input("state"))
+            ->where("active", 1)->first())
+            return ResponseFormatter::successResponse("Not a valid state_id");
 
         $customer = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($customer) {
