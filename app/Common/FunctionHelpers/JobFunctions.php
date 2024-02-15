@@ -203,8 +203,8 @@ class JobFunctions
             foreach ($activity_logs as $activity_log) {
                 $activity_logs_data[] = [
                     "message" => $activity_log->message,
-                    "timestamp" => $activity_log->timestamp,
-                    "image" => $s3SiteName . $activity_log->image,
+                    "timestamp" => Carbon::createFromTimestamp($activity_log->timestamp)->format('Y-m-d\TH:i:s.uP'),
+                    "image" => $activity_log->image == null ? "" : $s3SiteName . $activity_log->image,
                 ];
             }
             $content_data += [
