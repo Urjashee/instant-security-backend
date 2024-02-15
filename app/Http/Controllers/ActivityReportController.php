@@ -6,6 +6,7 @@ use App\Common\FunctionHelpers\JobFunctions;
 use App\Common\ResponseFormatter;
 use App\Constants;
 use App\Models\ActivityReport;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
@@ -57,7 +58,8 @@ class ActivityReportController extends Controller
                     "job_id" => $activityReport->job_id,
                     "user_id" => $activityReport->user_id,
                     "activity_message" => $activityReport->message,
-                    "activity_timestamp" => (string)$activityReport->timestamp,
+//                    "activity_timestamp" => (string)$activityReport->timestamp,
+                    "activity_timestamp" => Carbon::createFromTimestamp($activityReport->timestamp)->format('Y-m-d\TH:i:s.uP'),
                     "activity_image" => $activityReport->image == null ? "" : $s3SiteName . $activityReport->image,
                 ];
                 $contentData[] = $jobData;
