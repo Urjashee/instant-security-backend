@@ -469,9 +469,13 @@ class ProfileController extends Controller
             ->where("active", 1)->first())
             return ResponseFormatter::successResponse("Not a valid state_id");
 
+        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $customer = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($customer) {
-
+            $user->first_name = $request->input("first_name");
+            $user->last_name = $request->input("last_name");
+            $user->phone_no = $request->input("phone_number");
+            $user->state_id = $request->input("state");
 //            UserFunctions::editUser($request,$request->input(Constants::CURRENT_USER_ID_KEY));
             $customer->address1 = $request->input("address1");
             if ($request->has("address2")) {
@@ -480,7 +484,7 @@ class ProfileController extends Controller
             $customer->city = $request->input("city");
             $customer->zipcode = $request->input("zipcode");
 
-            if ($request->has("profile_image")) {
+            if ($request->has("profile_image") && $request->file("profile_image") != null) {
                 if ($customer->profile_image != null) {
                     $s3 = Storage::disk('s3');
                     $s3->delete($customer->profile_image);
@@ -490,7 +494,7 @@ class ProfileController extends Controller
                 $profile_images->storeAs('web_profile_images', $fileNameProfile, 's3');
                 $customer->profile_image = 'web_profile_images/' . $fileNameProfile;
             }
-            if ($request->has("state_id_image")) {
+            if ($request->has("state_id_image") && $request->file("state_id_image") != null) {
                 $s3 = Storage::disk('s3');
                 $s3->delete($customer->state_id_image);
                 $fileNameState = time() . '.' . $request->file('state_id_image')->getClientOriginalExtension();
@@ -499,7 +503,9 @@ class ProfileController extends Controller
                 $customer->state_id_image = 'web_state_id_images/' . $fileNameState;
             }
 
+            $user->update();
             $customer->update();
+
 
             return ResponseFormatter::successResponse("User updated!");
         } else {
