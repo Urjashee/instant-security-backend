@@ -65,6 +65,9 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                 Route::get("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'getActivityReport']);
                 Route::post("/response-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'responseMoreTime']);
             });
+            Route::group(['prefix' => '/faq'], function () {
+                Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
+            });
         });
     });
     Route::group(["middleware" => ["rbac:customer,user"]], function () {
