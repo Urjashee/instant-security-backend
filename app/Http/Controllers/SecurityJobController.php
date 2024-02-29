@@ -565,7 +565,7 @@ class SecurityJobController extends Controller
             if ($job_details) {
                 $extraTime = JobFunctions::extraTimeRequest($job_id);
                 if ($extraTime) {
-                    return ResponseFormatter::unauthorizedResponse("Customer requested you for 1 more hour.");
+                    return ResponseFormatter::errorResponse("Customer requested you for 1 more hour.");
                 } else {
                     $clock_out = JobFunctions::clockOutRequests($request, $job_details);
                     if ($clock_out == true) {
