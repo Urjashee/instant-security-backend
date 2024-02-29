@@ -98,7 +98,7 @@ class SecurityJobController extends Controller
                     $newJobs->roles_and_responsibility = $request->input("roles_and_responsibility");
                     $newJobs->price = $jobType->hourly_rate;
                     $difference = $request->input("event_end") - $request->input("event_start");
-                    $total_price = ($difference / 3600) * $jobType->hourly_rate;
+                    $total_price = round(($difference / 3600) * $jobType->hourly_rate);
                     $newJobs->max_price = $total_price;
                     $newJobs->total_price = $total_price;
                     $newJobs->price_paid = 0;
