@@ -15,10 +15,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('rejected:cron')->everyMinute();
-        $schedule->command('thumbnail_upload:cron')->everyMinute();
-        $schedule->command('token:cron')->everyThirtyMinutes();
-        $schedule->command('backup:run')->everyTwoHours();
+        $schedule->command('expired:jobs')->everyTwoHours();
     }
 
     /**

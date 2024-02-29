@@ -49,7 +49,7 @@ class ListController extends Controller
                 'name' => ConfigList::dayString($days),
             ];
         }
-        for ($jobs = 1; $jobs <= 4; $jobs++) {
+        for ($jobs = 1; $jobs <= 5; $jobs++) {
             $jobList[] = [
                 'id' => $jobs,
                 'name' => ConfigList::jobType($jobs),

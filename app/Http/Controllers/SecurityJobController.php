@@ -256,8 +256,7 @@ class SecurityJobController extends Controller
             ->where("security_jobs.osha_license_id", $user->osha_license_type)
             ->where("security_jobs.job_status", Constants::OPEN)
             ->where("security_jobs.event_start", ">", strtotime(Carbon::now()))
-            ->orderBy("security_jobs.created_at", "DESC")
-//            ->get()
+            ->orderBy("security_jobs.created_at", "DESC")//            ->get()
         ;
         if ($offset && $limit) {
             $jobsLicense->offset($offset);
@@ -366,7 +365,7 @@ class SecurityJobController extends Controller
                     $job_details->save();
 
                     (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
-                        $job->user_id,1);
+                        $job->user_id, 1);
                     return ResponseFormatter::successResponse("Job has been updated");
 
                 } else {
@@ -438,7 +437,7 @@ class SecurityJobController extends Controller
                     );
                 }
                 (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
-                    $job->user_id,2);
+                    $job->user_id, 2);
                 return ResponseFormatter::successResponse("Job cancelled");
             } catch (\Exception $exception) {
                 DB::rollback();
@@ -499,7 +498,8 @@ class SecurityJobController extends Controller
             $time2 = $job->event_start;
             if ($time1 > $job->event_end) {
                 return ResponseFormatter::errorResponse("Clock-in time cannot be greater than event end time");
-            } if ((($time2 - $time1)/60 >= 30)) {
+            }
+            if ((($time2 - $time1) / 60 >= 30)) {
                 return ResponseFormatter::errorResponse("Can't clock in before 30 minutes");
             } else {
                 $job_details = JobDetail::where("job_id", $job_id)->first();
@@ -572,8 +572,7 @@ class SecurityJobController extends Controller
                         (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
                             $job->user_id, 4);
                         return ResponseFormatter::successResponse("Clock-out request sent");
-                    }
-                    else
+                    } else
                         return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
                 }
             } else {
@@ -748,6 +747,23 @@ class SecurityJobController extends Controller
             return ResponseFormatter::successResponse("Transactions", $transactions);
         } else {
             return ResponseFormatter::errorResponse("No transactions");
+        }
+    }
+
+    public function expireJobs(): \Illuminate\Http\JsonResponse
+    {
+        $jobs = SecurityJob::where("job_status", Constants::OPEN)
+            ->where('event_end', "<", time())
+            ->get();
+
+        if ($jobs) {
+            foreach ($jobs as $job) {
+                $job->job_status = Constants::EXPIRED;
+                $job->update();
+            }
+            return ResponseFormatter::successResponse("Jobs", $jobs);
+        } else {
+            return ResponseFormatter::errorResponse("No Jobs");
         }
     }
 }

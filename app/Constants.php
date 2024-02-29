@@ -21,6 +21,7 @@ class Constants
     const COMPLETED = 2;
     const CANCELLED = 3;
     const ONGOING = 4;
+    const EXPIRED = 5;
     const ADMIN_USER = 1;
     const WEB_USER = 2;
     const MOBILE_USER = 3;

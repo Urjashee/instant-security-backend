@@ -26,6 +26,7 @@ Route::get("/refresh-token", [\App\Http\Controllers\LoginController::class, 'ref
 Route::get("/list/config", [\App\Http\Controllers\ListController::class, 'getAllLists']);
 //Stripe
 Route::get("/invoice", [\App\Http\Controllers\SecurityJobController::class, 'addInvoice']);
+Route::get("/expire-job", [\App\Http\Controllers\SecurityJobController::class, 'expireJobs']);
 
 Route::group(["middleware" => ["jwt.verify"]], function () {
     //Lists
