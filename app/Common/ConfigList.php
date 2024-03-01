@@ -67,6 +67,12 @@ class ConfigList {
             case(5):
                 return "Expired Job";
                 break;
+            case(6):
+                return "Pending Job";
+                break;
+            case(7):
+                return "Rejected Job";
+                break;
             default:
                 return 'Something went wrong.';
         }

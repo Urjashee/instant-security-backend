@@ -98,6 +98,9 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
             });
 
             Route::post("/review", [\App\Http\Controllers\SecurityJobController::class, 'addJobReview']);
+            Route::group(['prefix' => '/faq'], function () {
+                Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
+            });
         });
     });
 

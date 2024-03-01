@@ -102,7 +102,7 @@ class SecurityJobController extends Controller
                     $newJobs->max_price = $total_price;
                     $newJobs->total_price = $total_price;
                     $newJobs->price_paid = 0;
-                    $newJobs->job_status = 0;
+                    $newJobs->job_status = Constants::PENDING;
                     $newJobs->chat_sid = $conversation->sid;
                     $newJobs->chat_service_sid = $conversation->chatServiceSid;
                     try {
@@ -148,10 +148,15 @@ class SecurityJobController extends Controller
         $contentData = array();
         $status = $request->query("status");
 
-        $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-            ->where("job_status", $status)
-//            ->with('security_jobs')
-            ->get();
+        if ($status == 0) {
+            $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                ->where("job_status", $status)->orWhere("job_status", Constants::PENDING)->orWhere("job_status", Constants::REJECTED_JOB)
+                ->get();
+        } else {
+            $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                ->where("job_status", $status)
+                ->get();
+        }
         if ($jobs) {
             foreach ($jobs as $job) {
                 $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status);

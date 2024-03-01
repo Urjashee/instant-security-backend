@@ -22,6 +22,8 @@ class Constants
     const CANCELLED = 3;
     const ONGOING = 4;
     const EXPIRED = 5;
+    const PENDING = 6;
+    const REJECTED_JOB = 7;
     const ADMIN_USER = 1;
     const WEB_USER = 2;
     const MOBILE_USER = 3;
