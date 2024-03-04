@@ -15,6 +15,7 @@ use App\Models\ActivityReport;
 use App\Models\CustomerProfile;
 use App\Models\FireGuardLicense;
 use App\Models\IncidentReport;
+use App\Models\JobAppliedGuard;
 use App\Models\JobDetail;
 use App\Models\JobFireLicense;
 use App\Models\JobType;
@@ -291,7 +292,7 @@ class SecurityJobController extends Controller
                 $jobs = SecurityJob::where("id", $job_list)->first();
                 if ($jobs && (in_array($jobs->state_id, $state_licenses))) {
                     $customer_profile = CustomerProfile::where("user_id", $jobs->user_id)->first();
-                    $view_jobs_data = JobFunctions::viewJobs($jobs, $customer_profile, Constants::OPEN, null);
+                    $view_jobs_data = JobFunctions::viewJobs($jobs, $customer_profile, Constants::OPEN, null, $request->input(Constants::CURRENT_USER_ID_KEY));
                     $content_data[] = $view_jobs_data;
                 }
             }
@@ -324,13 +325,15 @@ class SecurityJobController extends Controller
         }
     }
 
-    public function updateJobStatus(Request $request, $job_id, $status)
+    public function updateJobStatus(Request $request, $job_id, $status): \Illuminate\Http\JsonResponse
     {
         $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($status == Constants::ACCEPTED) {
             $auth_user = JobFunctions::checkUserStatus($request->input(Constants::CURRENT_USER_ID_KEY));
             $next_job_status = JobFunctions::nextJobStatus($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
             $license_expiry = JobFunctions::licenceExpiry($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
+            $already_applied = JobFunctions::alreadyApplied($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
+            $banking_details = JobFunctions::bankingDetails($request->input(Constants::CURRENT_USER_ID_KEY));
             if (!$auth_user) {
                 return ResponseFormatter::unauthorizedResponse("User status is inactive");
             }
@@ -339,69 +342,66 @@ class SecurityJobController extends Controller
             }
             if (!$license_expiry) {
                 return ResponseFormatter::errorResponse(StringTemplate::response(2));
-            } else {
-                $job = SecurityJob::where("id", $job_id)
-                    ->where("job_status", Constants::OPEN)
-                    ->first();
-
-                if ($job) {
-                    if ($job->participant_id == null) {
-                        try {
-                            $participant = TwillioHelper::addChatParticipantToConversation($job->users->friendly_name, $job->chat_sid);
-                        } catch (\Exception $e) {
-                            return ResponseFormatter::errorResponse($e->getMessage());
-                        }
-
-                        $job->participant_id = $participant;
-                    }
-
-                    $job->job_status = Constants::UPCOMING;
-                    $job->update();
-                    $job_details = new JobDetail();
-                    $job_details->job_id = $job->id;
-                    $job_details->guard_id = $request->input(Constants::CURRENT_USER_ID_KEY);
-                    try {
-                        $participant_user = TwillioHelper::addChatParticipantToConversation($user->friendly_name, $job->chat_sid);
-                    } catch (\Exception $e) {
-                        return ResponseFormatter::errorResponse($e->getMessage());
-                    }
-                    $job_details->participant_id = $participant_user;
-                    $job_details->chat_sid = $job->chat_sid;
-                    $job_details->save();
-
-                    (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
-                        $job->user_id, 1);
-                    return ResponseFormatter::successResponse("Job has been updated");
-
-                } else {
-                    return ResponseFormatter::errorResponse("Job has already been filled");
-                }
             }
-        } elseif ($status == Constants::DENIED) {
-            $job = SecurityJob::where("id", $job_id)
-                ->where("job_status", "!=", Constants::COMPLETED)
-                ->first();
-            if ($job) {
+            if (!$banking_details) {
+                return ResponseFormatter::errorResponse(StringTemplate::response(3));
+            }
+            if (!$already_applied) {
+                return ResponseFormatter::errorResponse(StringTemplate::response(4));
+            } else {
+                $assignJob = new JobAppliedGuard();
+                $assignJob->job_id = $job_id;
+                $assignJob->guard_id = $user->id;
+                $assignJob->save();
+                return ResponseFormatter::successResponse("Request sent");
+            }
+        } else {
+            return ResponseFormatter::errorResponse("Not a valid response");
+        }
+    }
+
+    public function assignJob(Request $request, $job_id, $user_id): \Illuminate\Http\JsonResponse
+    {
+        $user = User::where("id", $user_id)->first();
+        $job = SecurityJob::where("id", $job_id)
+            ->where("job_status", Constants::OPEN)
+            ->first();
+
+        if ($job) {
+            if ($job->participant_id == null) {
                 try {
-                    TwillioHelper::deleteConversationWithSid($job->chat_sid);
+                    $participant = TwillioHelper::addChatParticipantToConversation($job->users->friendly_name, $job->chat_sid);
                 } catch (\Exception $e) {
                     return ResponseFormatter::errorResponse($e->getMessage());
                 }
-                $job->job_status = Constants::CANCELLED;
-                $job->chat_sid = null;
-                $job->chat_service_sid = null;
-                $job->participant_id = null;
-                $job->update();
-
-                $job_details = JobDetail::where("job_id", $job_id)->first();
-                $job_details->delete();
-
-//deleteConversationWithSid
-                return ResponseFormatter::successResponse("Job has been updated");
-
-            } else {
-                return ResponseFormatter::errorResponse("Job already started");
+                $job->participant_id = $participant;
             }
+
+            $job->job_status = Constants::UPCOMING;
+            $job->update();
+            $job_details = new JobDetail();
+            $job_details->job_id = $job->id;
+            $job_details->guard_id = $user_id;
+            try {
+                $participant_user = TwillioHelper::addChatParticipantToConversation($user->friendly_name, $job->chat_sid);
+            } catch (\Exception $e) {
+                return ResponseFormatter::errorResponse($e->getMessage());
+            }
+            $job_details->participant_id = $participant_user;
+            $job_details->chat_sid = $job->chat_sid;
+            $job_details->save();
+
+
+
+            JobInformation::dispatch(
+                $job->user->email,
+                StringTemplate::typeMessage(Constants::MSG_JOB_REQUEST_ACCEPTED, $job->event_name, null, $job->id),
+            );
+
+            (new NotificationController())->addNotifications($job_id, $user_id, $job->user_id, 1);
+            return ResponseFormatter::successResponse("Job has been updated");
+        } else {
+            return ResponseFormatter::errorResponse("Job has already been filled");
         }
     }
 
@@ -767,6 +767,32 @@ class SecurityJobController extends Controller
                 $job->update();
             }
             return ResponseFormatter::successResponse("Jobs has been expired");
+        } else {
+            return ResponseFormatter::errorResponse("No Jobs");
+        }
+    }
+
+    public function reviewJob($job_id, $status): \Illuminate\Http\JsonResponse
+    {
+        $job = SecurityJob::where("job_status", Constants::PENDING)
+            ->where('id', $job_id)
+            ->first();
+        if ($job) {
+            $user = User::where("id", $job->user_id)->first();
+            $job->job_status = $status;
+            $job->update();
+            if ($status == 0)
+                JobInformation::dispatch(
+                    $job->user->email,
+                    StringTemplate::typeMessage(Constants::MSG_JOB_ACCEPTED, $job->event_name, null, $job->id),
+                );
+            if ($status == 7)
+                JobInformation::dispatch(
+                    $job->user->email,
+                    StringTemplate::typeMessage(Constants::MSG_JOB_REJECTED, $job->event_name, null, $job->id),
+                );
+//            TODO Notification push notification
+            return ResponseFormatter::successResponse("Jobs has been updated");
         } else {
             return ResponseFormatter::errorResponse("No Jobs");
         }

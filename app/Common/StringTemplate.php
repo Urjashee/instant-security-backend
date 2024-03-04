@@ -24,6 +24,15 @@ class StringTemplate
             case(5):
                 return "Your account has been denied you can login now to change the following:\n " . $job;
                 break;
+            case(6):
+                return "Your job request for " . $job . " has been accepted";
+                break;
+            case(7):
+                return "Your job request for " . $job . " has been accepted";
+                break;
+            case(8):
+                return "Your job request for " . $job . " has been rejected";
+                break;
             default:
                 return 'Something went wrong.';
         }
@@ -65,6 +74,12 @@ class StringTemplate
                 break;
             case (2):
                 return "You have an expired license in your profile. Please update your profile to replace the expired license.";
+                break;
+            case (3):
+                return "Banking details missing. Please update your profile.";
+                break;
+            case (4):
+                return "You have already applied for the job.";
                 break;
             default:
                 return 'Something went wrong.';

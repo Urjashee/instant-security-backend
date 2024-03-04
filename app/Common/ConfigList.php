@@ -68,10 +68,19 @@ class ConfigList {
                 return "Expired Job";
                 break;
             case(6):
-                return "Pending Job";
+                return "Pending Review";
                 break;
             case(7):
-                return "Rejected Job";
+                return "Rejected";
+                break;
+            case(8):
+                return "Pending Assignment";
+                break;
+            case(9):
+                return "Assigned";
+                break;
+            case(10):
+                return "Pending Application";
                 break;
             default:
                 return 'Something went wrong.';

@@ -12,6 +12,7 @@ use App\Models\ActivityReport;
 use App\Models\CustomerProfile;
 use App\Models\FireGuardLicense;
 use App\Models\IncidentReport;
+use App\Models\JobAppliedGuard;
 use App\Models\JobDetail;
 use App\Models\SecurityJob;
 use App\Models\StateLicense;
@@ -49,23 +50,24 @@ class JobFunctions
 
     public static function checkUserStatus($user_id): bool
     {
-        $user = User::where("id",$user_id)->first();
-        if($user->status == 1) {
+        $user = User::where("id", $user_id)->first();
+        if ($user->status == 1) {
             return (true);
         } else {
             return (false);
         }
     }
+
     public static function nextJobStatus($user_id, $job_id): bool
     {
-        $job = SecurityJob::where("id",$job_id)->first();
-        if($job) {
+        $job = SecurityJob::where("id", $job_id)->first();
+        if ($job) {
             $time1 = Carbon::createFromTimestamp($job->event_start);
-            $jobDetails = JobDetail::where("guard_id",$user_id)->get();
+            $jobDetails = JobDetail::where("guard_id", $user_id)->get();
             foreach ($jobDetails as $jobDetail) {
                 $time2 = Carbon::createFromTimestamp($jobDetail->jobs->event_start);
                 $time3 = Carbon::createFromTimestamp($jobDetail->jobs->event_end);
-                if ((($time2->diffInMinutes($time1) <= 240) || ($time3->diffInMinutes($time1) <= 240)) && ($jobDetail->jobs->job_status != Constants::CANCELLED || $jobDetail->jobs->job_status != Constants::COMPLETED)) {
+                if ((($time2->diffInMinutes($time1) <= 240) || ($time3 > $time1)) && ($jobDetail->jobs->job_status != Constants::CANCELLED || $jobDetail->jobs->job_status != Constants::COMPLETED)) {
                     return (false);
                 }
             }
@@ -74,10 +76,11 @@ class JobFunctions
         }
         return (true);
     }
+
     public static function licenceExpiry($user_id, $job_id): bool
     {
-        $job = SecurityJob::where("id",$job_id)->first();
-        if($job) {
+        $job = SecurityJob::where("id", $job_id)->first();
+        if ($job) {
             $personalLicense = UserProfile::where("user_id", $user_id)->first();
             if ($personalLicense) {
 //                return ([$personalLicense->govt_id_expiry_date , Carbon::createFromTimestamp($job->event_start)->format('Y-m-d')]);
@@ -94,7 +97,7 @@ class JobFunctions
                 }
             }
             $fireLicenses = FireGuardLicense::where("user_id", $user_id)
-                ->where("state_id",$job->state_id)
+                ->where("state_id", $job->state_id)
                 ->get();
             if ($fireLicenses) {
                 foreach ($fireLicenses as $fireLicense) {
@@ -102,12 +105,37 @@ class JobFunctions
                         return (false);
                     }
                 }
-            }
-            else {
+            } else {
                 return (true);
             }
         }
         return true;
+    }
+
+    public static function bankingDetails($user_id): bool
+    {
+        $userBanking = UserProfile::where("user_id", $user_id)
+            ->first();
+        if ($userBanking) {
+            if ($userBanking->account_number == null || $userBanking->routing == null)
+                return false;
+            else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static function alreadyApplied($user_id, $job_id): bool
+    {
+        $userApplied = JobAppliedGuard::where("guard_id", $user_id)
+            ->where('job_id', $job_id)
+            ->first();
+        if ($userApplied) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public static function jobDetails($job, $role, $status): array
@@ -226,7 +254,7 @@ class JobFunctions
                     "activity_logs" => $activity_logs_data
                 ];
             }
-            $incident_reports = IncidentReport::where("job_id",$job->id)->get();
+            $incident_reports = IncidentReport::where("job_id", $job->id)->get();
             foreach ($incident_reports as $incident_report) {
                 $incident_report_data[] = [
                     "name" => $incident_report->name,
@@ -235,7 +263,7 @@ class JobFunctions
                 ];
             }
             $content_data += [
-              "incident_report" => $incident_report_data
+                "incident_report" => $incident_report_data
             ];
         }
 
@@ -262,7 +290,7 @@ class JobFunctions
         ];
     }
 
-    public static function viewJobs($jobs, $customer_profile, $status, $job_details): array
+    public static function viewJobs($jobs, $customer_profile, $status, $job_details, $user_id): array
     {
         $s3SiteName = Config::get('constants.s3_bucket');
         $job_status = null;
@@ -276,14 +304,28 @@ class JobFunctions
             "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
         ];
         if ($status == 0) {
-            $content_data += [
-                "job_description" => $jobs->job_description,
-                "job_roles_and_responsibility" => $jobs->roles_and_responsibility,
-                "job_price" => $jobs->price,
-                "job_max_price" => $jobs->max_price,
-                "job_status_id" => $jobs->job_status,
-                "job_status_name" => ConfigList::jobType($jobs->job_status),
-            ];
+            $applied_job = JobAppliedGuard::where('guard_id', $user_id)
+                ->where('job_id', $jobs->id)
+                ->first();
+            if ($applied_job) {
+                $content_data += [
+                    "job_description" => $jobs->job_description,
+                    "job_roles_and_responsibility" => $jobs->roles_and_responsibility,
+                    "job_price" => $jobs->price,
+                    "job_max_price" => $jobs->max_price,
+                    "job_status_id" => 10,
+                    "job_status_name" => ConfigList::jobType(10),
+                ];
+            } else {
+                $content_data += [
+                    "job_description" => $jobs->job_description,
+                    "job_roles_and_responsibility" => $jobs->roles_and_responsibility,
+                    "job_price" => $jobs->price,
+                    "job_max_price" => $jobs->max_price,
+                    "job_status_id" => $jobs->job_status,
+                    "job_status_name" => ConfigList::jobType($jobs->job_status),
+                ];
+            }
         }
         if ($status == 1) {
             if ($job_details->clock_in_request == 1 && $job_details->clock_in_request_accepted == 1) {
@@ -317,6 +359,7 @@ class JobFunctions
             return (false);
         }
     }
+
     public static function clockOutRequests($request, $job_details): bool
     {
         $job_details->clock_out_request = Constants::ACCEPTED;
@@ -338,7 +381,8 @@ class JobFunctions
         return true;
     }
 
-    public static function checkAdditionalTime($job, $job_detail) {
+    public static function checkAdditionalTime($job, $job_detail)
+    {
         if ($job->additional_hours_accepted) {
             $hours = $job->total_hours + $job->additional_hours;
             $job->event_add = $job->event_add + $job->additional_hours;

@@ -32,6 +32,9 @@ class Constants
     const MSG_CLOCK_OUT = 3;
     const APPROVED_ACCOUNT = 4;
     const DENIED_ACCOUNT = 5;
+    const MSG_JOB_REQUEST_ACCEPTED = 6;
+    const MSG_JOB_ACCEPTED = 7;
+    const MSG_JOB_REJECTED = 8;
     const ACCEPTED = 1;
     const DENIED = 0;
     const ACTIVE = 1;
