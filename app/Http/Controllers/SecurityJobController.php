@@ -315,7 +315,7 @@ class SecurityJobController extends Controller
                 $security_jobs = SecurityJob::where("id", $job->job_id)->where("job_status", $status)->first();
                 if ($security_jobs) {
                     $customer_profile = CustomerProfile::where("user_id", $security_jobs->user_id)->first();
-                    $view_jobs_data = JobFunctions::viewJobs($security_jobs, $customer_profile, $status, $job);
+                    $view_jobs_data = JobFunctions::viewJobs($security_jobs, $customer_profile, $status, $job, null);
                     $content_data[] = $view_jobs_data;
                 }
             }
@@ -391,7 +391,11 @@ class SecurityJobController extends Controller
             $job_details->chat_sid = $job->chat_sid;
             $job_details->save();
 
+            $job_applied = JobAppliedGuard::where('job_id',$job->id)
+                ->get();
+            if ($job_applied) {
 
+            }
 
             JobInformation::dispatch(
                 $job->user->email,
@@ -783,12 +787,12 @@ class SecurityJobController extends Controller
             $job->update();
             if ($status == 0)
                 JobInformation::dispatch(
-                    $job->user->email,
+                    $user->email,
                     StringTemplate::typeMessage(Constants::MSG_JOB_ACCEPTED, $job->event_name, null, $job->id),
                 );
             if ($status == 7)
                 JobInformation::dispatch(
-                    $job->user->email,
+                    $user->email,
                     StringTemplate::typeMessage(Constants::MSG_JOB_REJECTED, $job->event_name, null, $job->id),
                 );
 //            TODO Notification push notification
