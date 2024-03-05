@@ -13,4 +13,9 @@ class JobAppliedGuard extends Model
 {
     protected $table = 'job_applied_guards';
     use HasFactory;
+    protected $with = ["user"];
+    public function user()
+    {
+        return $this->belongsTo(User::class, "guard_id");
+    }
 }

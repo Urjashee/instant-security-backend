@@ -28,10 +28,13 @@ class StringTemplate
                 return "Your job request for " . $job . " has been accepted";
                 break;
             case(7):
-                return "Your job request for " . $job . " has been accepted";
+                return "Your request for " . $job . " has been accepted";
                 break;
             case(8):
                 return "Your job request for " . $job . " has been rejected";
+                break;
+            case(9):
+                return "Your request for " . $job . " has been rejected";
                 break;
             default:
                 return 'Something went wrong.';

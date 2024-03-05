@@ -219,8 +219,29 @@ class JobFunctions
 //        }
         if ($role == 1) {
             $content_data += [
+                "job_status_id" => Constants::PENDING,
+                "job_status_name" => ConfigList::jobType(Constants::PENDING),
+            ];
+            $content_data += [
                 "job_price_paid" => $job->price_paid == 0 ? False : True,
             ];
+            if ($status == 0) {
+                $applied_jobs = JobAppliedGuard::where('job_id', $job->id)
+                    ->where('assigned',Constants::INACTIVE)
+                    ->get();
+                if ($applied_jobs) {
+                    $guards_data = array();
+                    foreach ($applied_jobs as $applied_job) {
+                        $guards_data = [
+                            "guard_id" => $applied_job->guard_id,
+                            "guard_name" => $applied_job->user->first_name . " " . $applied_job->user->last_name
+                        ];
+                    }
+                    $content_data += [
+                        "applied_guards" => $guards_data
+                    ];
+                }
+            }
         }
         if ($role == 4) {
             $content_data += [

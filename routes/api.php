@@ -118,8 +118,8 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
             Route::patch("/state/{id}", [\App\Http\Controllers\StateController::class, 'changeStateStatus']);
             Route::get("/transactions", [\App\Http\Controllers\SecurityJobController::class, 'transactions']);
 
-            Route::get("/review-job/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'reviewJob']);
-            Route::get("/assign-job/{job_id}/{user_id}", [\App\Http\Controllers\SecurityJobController::class, 'assignJob']);
+            Route::patch("/review-job/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'reviewJob']);
+            Route::patch("/assign-job/{job_id}/{user_id}", [\App\Http\Controllers\SecurityJobController::class, 'assignJob']);
             Route::get("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'getAllJobs']);
             Route::get("/jobs/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
             Route::group(['prefix' => '/faq'], function () {

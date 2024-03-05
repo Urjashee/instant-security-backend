@@ -174,9 +174,13 @@ class SecurityJobController extends Controller
         $contentData = array();
         $status = $request->query("status");
 
-        $jobs = SecurityJob::where("job_status", $status)
-            ->with('security_jobs')
-            ->get();
+        if ($status == 0) {
+            $jobs = SecurityJob::where("job_status", $status)->orWhere("job_status", Constants::PENDING)->orWhere("job_status", Constants::REJECTED_JOB)
+                ->get();
+        } else {
+            $jobs = SecurityJob::where("job_status", $status)
+                ->get();
+        }
         if ($jobs) {
             foreach ($jobs as $job) {
                 $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status);
@@ -394,13 +398,22 @@ class SecurityJobController extends Controller
             $job_applied = JobAppliedGuard::where('job_id',$job->id)
                 ->get();
             if ($job_applied) {
-
+                foreach($job_applied as $applied) {
+                    if ($applied->guard_id == $user_id) {
+                        JobInformation::dispatch(
+                            $applied->user->email,
+                            StringTemplate::typeMessage(Constants::MSG_JOB_REQUEST_ACCEPTED, $job->event_name, null, $job->id),
+                        );
+                        $applied->assigned=Constants::ACCEPTED;
+                        $applied->update();
+                    } else {
+                        JobInformation::dispatch(
+                            $applied->user->email,
+                            StringTemplate::typeMessage(Constants::MSG_JOB_REQUEST_REJECTED, $job->event_name, null, $job->id),
+                        );
+                    }
+                }
             }
-
-            JobInformation::dispatch(
-                $job->user->email,
-                StringTemplate::typeMessage(Constants::MSG_JOB_REQUEST_ACCEPTED, $job->event_name, null, $job->id),
-            );
 
             (new NotificationController())->addNotifications($job_id, $user_id, $job->user_id, 1);
             return ResponseFormatter::successResponse("Job has been updated");
