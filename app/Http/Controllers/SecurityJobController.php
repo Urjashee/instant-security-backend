@@ -155,10 +155,12 @@ class SecurityJobController extends Controller
                 ->orWhere("job_status", Constants::PENDING)
                 ->orWhere("job_status", Constants::REJECTED_JOB)
                 ->orWhere("job_status", Constants::UPCOMING)
+                ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         } else {
             $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
                 ->where("job_status", $status)
+                ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         }
         if ($jobs) {
@@ -179,10 +181,12 @@ class SecurityJobController extends Controller
 
         if ($status == 6) {
             $jobs = SecurityJob::where("job_status", Constants::PENDING)->orWhere("job_status", Constants::REJECTED_JOB)
+                ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         }
         if ($status == 0) {
             $jobs = SecurityJob::where("job_status", Constants::OPEN)->orWhere("job_status", Constants::UPCOMING)
+                ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         } else {
             $jobs = SecurityJob::where("job_status", $status)->get();
