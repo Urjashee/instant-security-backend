@@ -151,7 +151,10 @@ class SecurityJobController extends Controller
 
         if ($status == 0) {
             $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-                ->where("job_status", $status)->orWhere("job_status", Constants::PENDING)->orWhere("job_status", Constants::REJECTED_JOB)
+                ->where("job_status", $status)
+                ->orWhere("job_status", Constants::PENDING)
+                ->orWhere("job_status", Constants::REJECTED_JOB)
+                ->orWhere("job_status", Constants::UPCOMING)
                 ->get();
         } else {
             $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
@@ -174,12 +177,15 @@ class SecurityJobController extends Controller
         $contentData = array();
         $status = $request->query("status");
 
+        if ($status == 6) {
+            $jobs = SecurityJob::where("job_status", Constants::PENDING)->orWhere("job_status", Constants::REJECTED_JOB)
+                ->get();
+        }
         if ($status == 0) {
-            $jobs = SecurityJob::where("job_status", $status)->orWhere("job_status", Constants::PENDING)->orWhere("job_status", Constants::REJECTED_JOB)
+            $jobs = SecurityJob::where("job_status", Constants::OPEN)->orWhere("job_status", Constants::UPCOMING)
                 ->get();
         } else {
-            $jobs = SecurityJob::where("job_status", $status)
-                ->get();
+            $jobs = SecurityJob::where("job_status", $status)->get();
         }
         if ($jobs) {
             foreach ($jobs as $job) {
@@ -395,16 +401,16 @@ class SecurityJobController extends Controller
             $job_details->chat_sid = $job->chat_sid;
             $job_details->save();
 
-            $job_applied = JobAppliedGuard::where('job_id',$job->id)
+            $job_applied = JobAppliedGuard::where('job_id', $job->id)
                 ->get();
             if ($job_applied) {
-                foreach($job_applied as $applied) {
+                foreach ($job_applied as $applied) {
                     if ($applied->guard_id == $user_id) {
                         JobInformation::dispatch(
                             $applied->user->email,
                             StringTemplate::typeMessage(Constants::MSG_JOB_REQUEST_ACCEPTED, $job->event_name, null, $job->id),
                         );
-                        $applied->assigned=Constants::ACCEPTED;
+                        $applied->assigned = Constants::ACCEPTED;
                         $applied->update();
                     } else {
                         JobInformation::dispatch(

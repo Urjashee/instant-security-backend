@@ -167,10 +167,57 @@ class JobFunctions
             "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
         ];
         if ($status == 0) {
-            $content_data += [
-                "job_status_id" => $job->job_status,
-                "job_status_name" => ConfigList::jobType($job->job_status),
-            ];
+            $assigned_job_true = false;
+            $assigned_job_all = false;
+            if ($role == 2 && ($job->job_status == Constants::OPEN ||
+                    $job->job_status == Constants::UPCOMING ||
+                    $job->job_status == Constants::REJECTED_JOB ||
+                    $job->job_status == Constants::PENDING)) {
+                $content_data += [
+                    "job_status_id" => $job->job_status,
+                    "job_status_name" => ConfigList::jobType($job->job_status),
+                ];
+            } else if ($role == 1 && ($job->job_status == 0 || $job->job_status == 1)) {
+                $applied_jobs = JobAppliedGuard::where('job_id', $job->id)
+                    ->where('assigned',Constants::INACTIVE)
+                    ->get();
+                $applied_jobs_active = JobAppliedGuard::where('job_id', $job->id)
+                    ->where('assigned',Constants::ACTIVE)
+                    ->first();
+                if ($applied_jobs_active) {
+                    $assigned_job_true = true;
+                }
+                if ($applied_jobs) {
+                    $assigned_job_all = true;
+                    $guards_data = array();
+                    foreach ($applied_jobs as $applied_job) {
+                        $guards_data[] = [
+                            "guard_id" => $applied_job->guard_id,
+                            "guard_name" => $applied_job->user->first_name . " " . $applied_job->user->last_name
+                        ];
+                    }
+                    $content_data += [
+                        "applied_guards" => $guards_data,
+                    ];
+                }
+                if ($assigned_job_true && $assigned_job_all) {
+                    $content_data += [
+                        "job_status_id" => 9,
+                        "job_status_name" => ConfigList::jobType(9),
+                    ];
+                } if (!$assigned_job_true && $assigned_job_all) {
+                    $content_data += [
+                        "job_status_id" => 8,
+                        "job_status_name" => ConfigList::jobType(8),
+                    ];
+                } if (!$assigned_job_true && !$assigned_job_all){
+                    $content_data += [
+                        "job_status_id" => $job->job_status,
+                        "job_status_name" => ConfigList::jobType($job->job_status),
+                    ];
+                }
+
+            }
         }
         if ($status == 1) {
             if ($job->security_jobs->clock_in_request == 1 && $job->security_jobs->clock_in_request_accepted == 1) {
@@ -199,8 +246,20 @@ class JobFunctions
         }
         if ($status == 4) {
             $content_data += [
-                "job_status_id" => 4,
-                "job_status_name" => ConfigList::jobType(4),
+                "job_status_id" => Constants::ONGOING,
+                "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+            ];
+        }
+        if ($status == 6) {
+            if ($job->job_status == Constants::PENDING)
+                $content_data += [
+                "job_status_id" => Constants::PENDING,
+                "job_status_name" => ConfigList::jobType(Constants::PENDING),
+            ];
+            if ($job->job_status == Constants::REJECTED_JOB)
+                $content_data += [
+                "job_status_id" => Constants::REJECTED_JOB,
+                "job_status_name" => ConfigList::jobType(Constants::REJECTED_JOB),
             ];
         }
         if ($job->job_status == 1 || $job->job_status == 2) {
@@ -219,29 +278,8 @@ class JobFunctions
 //        }
         if ($role == 1) {
             $content_data += [
-                "job_status_id" => Constants::PENDING,
-                "job_status_name" => ConfigList::jobType(Constants::PENDING),
-            ];
-            $content_data += [
                 "job_price_paid" => $job->price_paid == 0 ? False : True,
             ];
-            if ($status == 0) {
-                $applied_jobs = JobAppliedGuard::where('job_id', $job->id)
-                    ->where('assigned',Constants::INACTIVE)
-                    ->get();
-                if ($applied_jobs) {
-                    $guards_data = array();
-                    foreach ($applied_jobs as $applied_job) {
-                        $guards_data = [
-                            "guard_id" => $applied_job->guard_id,
-                            "guard_name" => $applied_job->user->first_name . " " . $applied_job->user->last_name
-                        ];
-                    }
-                    $content_data += [
-                        "applied_guards" => $guards_data
-                    ];
-                }
-            }
         }
         if ($role == 4) {
             $content_data += [
@@ -334,8 +372,8 @@ class JobFunctions
                     "job_roles_and_responsibility" => $jobs->roles_and_responsibility,
                     "job_price" => $jobs->price,
                     "job_max_price" => $jobs->max_price,
-                    "job_status_id" => 10,
-                    "job_status_name" => ConfigList::jobType(10),
+                    "job_status_id" => 8,
+                    "job_status_name" => ConfigList::jobType(8),
                 ];
             } else {
                 $content_data += [
