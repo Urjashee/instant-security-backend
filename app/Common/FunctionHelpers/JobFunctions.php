@@ -220,16 +220,38 @@ class JobFunctions
             }
         }
         if ($status == 1) {
-            if ($job->security_jobs->clock_in_request == 1 && $job->security_jobs->clock_in_request_accepted == 1) {
-                $content_data += [
-                    "job_status_id" => 4,
-                    "job_status_name" => ConfigList::jobType(4),
-                ];
+            $job_detail = JobDetail::where("job_id", $job->id)->first();
+            if ($role == 3) {
+                if ($job->security_jobs->clock_in_request == 1 && $job->security_jobs->clock_in_request_accepted == 1) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+                    ];
+                } else {
+                    $content_data += [
+                        "job_status_id" => Constants::UPCOMING,
+                        "job_status_name" => ConfigList::jobType(1),
+                    ];
+                }
             } else {
-                $content_data += [
-                    "job_status_id" => 1,
-                    "job_status_name" => ConfigList::jobType(1),
-                ];
+                if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::UPCOMING,
+                        "job_status_name" => "Clock-in request",
+                    ];
+                }
+                else if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 1 && $job_detail->clock_out_request == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+                    ];
+                }
+                else if ($job_detail->clock_out_request == 1 && $job_detail->clock_out_request_accepted == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => "Clock-out request",
+                    ];
+                }
             }
         }
         if ($status == 2) {

@@ -62,6 +62,9 @@ class SecurityJobController extends Controller
         if (!JobType::where("id", $request->input("job_type_id"))->first())
             return ResponseFormatter::successResponse("Not a valid job_type_id");
 
+        if ($request->input("event_start") <= time())
+            return ResponseFormatter::successResponse("Job start time cannot be less than current time");
+
         $customer_profile = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($customer_profile) {
             try {
@@ -159,11 +162,8 @@ class SecurityJobController extends Controller
                 ->get();
         }
         if ($status == 1) {
-            $jobs = SecurityJob::select("*")
-                ->join("job_details", "security_jobs.id", "=", "job_details.job_id")
-                ->where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-                ->where("job_status", Constants::OPEN)
-                ->orWhere("clock_in_request", 1)
+            $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                ->where("job_status", Constants::UPCOMING)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         } else {
