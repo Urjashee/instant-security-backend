@@ -251,6 +251,11 @@ class JobFunctions
                         "job_status_id" => Constants::ONGOING,
                         "job_status_name" => "Clock-out request",
                     ];
+                } else {
+                    $content_data += [
+                        "job_status_id" => Constants::OPEN,
+                        "job_status_name" => ConfigList::jobType(Constants::OPEN),
+                    ];
                 }
             }
         }
