@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('expired:jobs')->everyTwoHours();
+        $schedule->command('command:expire_jobs')->everyThirtyMinutes();
+        $schedule->command('command:clock_out')->everyThirtyMinutes();
     }
 
     /**

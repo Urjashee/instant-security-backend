@@ -2,25 +2,24 @@
 
 namespace App\Console\Commands;
 
-use App\Common\FunctionHelpers\ProfileFunction;
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SecurityJobController;
 use Illuminate\Console\Command;
 
-class UploadThumbnail extends Command
+class AutoClockOut extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'thumbnail_upload:cron';
+    protected $signature = 'command:clock_out';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Command to auto clock out';
 
     /**
      * Create a new command instance.
@@ -39,6 +38,6 @@ class UploadThumbnail extends Command
      */
     public function handle()
     {
-        ProfileFunction::sendThumbnailToBucket();
+        (new SecurityJobController())->autoClockOut();
     }
 }

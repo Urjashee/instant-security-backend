@@ -12,7 +12,7 @@ class ExpireJobs extends Command
      *
      * @var string
      */
-    protected $signature = 'expired:jobs';
+    protected $signature = 'command:expire_jobs';
 
     /**
      * The console command description.
