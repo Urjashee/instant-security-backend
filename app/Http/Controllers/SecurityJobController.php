@@ -157,8 +157,12 @@ class SecurityJobController extends Controller
                 ->orWhere("job_status", Constants::UPCOMING)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
-        } if ($status == 1) {
-            $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+        }
+        if ($status == 1) {
+            $jobs = SecurityJob::select("security_jobs.user_id",
+                "security_jobs.job_status","security_jobs.created_at","job_details.clock_in_request")
+                ->join("job_details", "security_jobs.id", "=", "job_details.job_id")
+                ->where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
                 ->where("job_status", Constants::OPEN)
                 ->orWhere("clock_in_request", 1)
                 ->orderBy("security_jobs.created_at", "DESC")
