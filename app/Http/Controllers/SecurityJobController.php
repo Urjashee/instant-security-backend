@@ -783,7 +783,7 @@ class SecurityJobController extends Controller
 
     public function transactions(): \Illuminate\Http\JsonResponse
     {
-        $transactions = Transaction::orderBy("create_at", "DESC")->get();
+        $transactions = Transaction::orderBy("created_at", "DESC")->get();
         if ($transactions) {
             return ResponseFormatter::successResponse("Transactions", $transactions);
         } else {
