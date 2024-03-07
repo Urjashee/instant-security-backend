@@ -84,6 +84,9 @@ class StringTemplate
             case (4):
                 return "You have already applied for the job.";
                 break;
+            case (5):
+                return "The job is within 4 hours of the start/end time of another job for the user.";
+                break;
             default:
                 return 'Something went wrong.';
         }

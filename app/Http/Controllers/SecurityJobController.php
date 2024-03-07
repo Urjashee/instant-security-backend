@@ -385,6 +385,10 @@ class SecurityJobController extends Controller
 
     public function assignJob(Request $request, $job_id, $user_id): \Illuminate\Http\JsonResponse
     {
+        $next_job_status = JobFunctions::nextJobStatus($user_id, $job_id);
+        if (!$next_job_status) {
+            return ResponseFormatter::errorResponse(StringTemplate::response(5));
+        }
         $user = User::where("id", $user_id)->first();
         $job = SecurityJob::where("id", $job_id)
             ->where("job_status", Constants::OPEN)
@@ -762,22 +766,27 @@ class SecurityJobController extends Controller
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
 
-        $job_details = JobDetail::where("job_id", $request->input("job_id"))->first();
-        $auth_user = JobFunctions::authenticateUser($request->input("job_id"), $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
-        if (!$auth_user) {
-            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
-        }
-        $is_job_completed = JobFunctions::jobCompleted($request->input("job_id"));
-        if (!$is_job_completed) {
-            return ResponseFormatter::errorResponse("Job has not completed yet!");
+        $job_review = JobReview::where("job_id", $request->input("job_id"))->first();
+        if ($job_review) {
+            return ResponseFormatter::errorResponse("Review already added");
         } else {
-            $review = new JobReview();
-            $review->job_id = $request->input("job_id");
-            $review->user_id = $job_details->guard_id;
-            $review->rating = $request->input("rating");
-            $review->message = $request->input("message");
-            $review->save();
-            return ResponseFormatter::successResponse("Job Review added");
+            $job_details = JobDetail::where("job_id", $request->input("job_id"))->first();
+            $auth_user = JobFunctions::authenticateUser($request->input("job_id"), $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
+            if (!$auth_user) {
+                return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+            }
+            $is_job_completed = JobFunctions::jobCompleted($request->input("job_id"));
+            if (!$is_job_completed) {
+                return ResponseFormatter::errorResponse("Job has not completed yet!");
+            } else {
+                $review = new JobReview();
+                $review->job_id = $request->input("job_id");
+                $review->user_id = $job_details->guard_id;
+                $review->rating = $request->input("rating");
+                $review->message = $request->input("message");
+                $review->save();
+                return ResponseFormatter::successResponse("Job Review added");
+            }
         }
     }
 

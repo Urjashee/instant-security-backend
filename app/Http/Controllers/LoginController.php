@@ -85,6 +85,8 @@ class LoginController extends Controller
             if (Hash::check($request->input("password"), $user->password)) {
                 list($token, $refreshToken) = UserFunctions::generateToken($user);
 
+                $this->deviceToken($user, $request, $token);
+
                 return ResponseFormatter::successResponse("Login successful.",
                     array("token" => (string)$token, "refresh_token" => (string)$refreshToken))
                     ->cookie('token', (string)$token, 60);

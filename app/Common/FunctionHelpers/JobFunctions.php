@@ -14,6 +14,7 @@ use App\Models\FireGuardLicense;
 use App\Models\IncidentReport;
 use App\Models\JobAppliedGuard;
 use App\Models\JobDetail;
+use App\Models\JobReview;
 use App\Models\SecurityJob;
 use App\Models\StateLicense;
 use App\Models\User;
@@ -260,6 +261,18 @@ class JobFunctions
             }
         }
         if ($status == 2) {
+            $job_review = JobReview::where("job_id", $job->id)->first();
+            if ($job_review) {
+                $content_data += [
+                    "job_review" => true,
+                    "job_review_rating" => $job_review->rating,
+                    "job_review_message" => $job_review->message,
+                ];
+            } else {
+                $content_data += [
+                    "job_review" => false
+                ];
+            }
             $content_data += [
                 "job_status_id" => $job->job_status,
                 "job_status_name" => ConfigList::jobType($job->job_status),
