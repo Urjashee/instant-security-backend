@@ -167,6 +167,7 @@ class JobFunctions
             "job_posted_by_name" => $job->users->first_name . " " . $job->users->last_name,
             "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
         ];
+
         if ($status == 0) {
             $assigned_job_true = false;
             $assigned_job_all = false;
@@ -261,18 +262,6 @@ class JobFunctions
             }
         }
         if ($status == 2) {
-            $job_review = JobReview::where("job_id", $job->id)->first();
-            if ($job_review) {
-                $content_data += [
-                    "job_review" => true,
-                    "job_review_rating" => $job_review->rating,
-                    "job_review_message" => $job_review->message,
-                ];
-            } else {
-                $content_data += [
-                    "job_review" => false
-                ];
-            }
             $content_data += [
                 "job_status_id" => $job->job_status,
                 "job_status_name" => ConfigList::jobType($job->job_status),
@@ -316,6 +305,20 @@ class JobFunctions
 //                "job_customer_name" => $job->users->first_name . " " . $job->users->last_name,
 //            ];
 //        }
+        if ($role == 2 && $role == 1) {
+            $job_review = JobReview::where("job_id", $job->id)->first();
+            if ($job_review) {
+                $content_data += [
+                    "job_review" => true,
+                    "job_review_rating" => $job_review->rating,
+                    "job_review_message" => $job_review->message,
+                ];
+            } else {
+                $content_data += [
+                    "job_review" => false
+                ];
+            }
+        }
         if ($role == 1) {
             $content_data += [
                 "job_price_paid" => $job->price_paid == 0 ? False : True,
