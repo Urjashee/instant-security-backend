@@ -30,6 +30,9 @@ class Constants
     const MSG_CANCELLED = 1;
     const MSG_CLOCK_IN = 2;
     const MSG_CLOCK_OUT = 3;
+    const EXTRA_TIME = 10;
+    const EXTRA_TIME_ACCEPTED = 11;
+    const EXTRA_TIME_REJECTED = 12;
     const APPROVED_ACCOUNT = 4;
     const DENIED_ACCOUNT = 5;
     const MSG_JOB_REQUEST_ACCEPTED = 6;

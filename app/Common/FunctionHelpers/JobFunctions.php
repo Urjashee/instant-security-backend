@@ -7,6 +7,7 @@ use App\Common\ConfigList;
 use App\Common\ResponseFormatter;
 use App\Common\StringTemplate;
 use App\Constants;
+use App\Http\Controllers\NotificationController;
 use App\Jobs\JobInformation;
 use App\Models\ActivityReport;
 use App\Models\CustomerProfile;
@@ -469,7 +470,7 @@ class JobFunctions
         }
     }
 
-    public static function clockOutRequests($request, $job_details): bool
+    public static function clockOutRequests($request, $job_details,$job): bool
     {
         $job_details->clock_out_request = Constants::ACCEPTED;
         $job_details->clock_out_time = $request->input("clock_out_time");
@@ -481,6 +482,8 @@ class JobFunctions
             $job_details->users->email,
             StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id),
         );
+        (new NotificationController())->addNotifications($job->id, $request->input(Constants::CURRENT_USER_ID_KEY),
+            $job->user_id, 4, StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id));
         try {
             TwillioHelper::sendSms($job_details->users->phone_no,
                 StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id));

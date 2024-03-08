@@ -560,14 +560,14 @@ class SecurityJobController extends Controller
                         $job->users->email,
                         StringTemplate::typeMessage(Constants::MSG_CLOCK_IN, $job->event_name, null, $job->id),
                     );
+                    (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                        $job->user_id, 3, StringTemplate::typeMessage(Constants::MSG_CLOCK_IN, $job->event_name, null, $job->id));
                     try {
                         TwillioHelper::sendSms($job->users->phone_no,
                             StringTemplate::typeMessage(Constants::MSG_CLOCK_IN, $job->event_name, null, $job->id));
                     } catch (\Exception $e) {
                         return ResponseFormatter::errorResponse("Clock-in request sent but message couldn't be delivered");
                     }
-                    (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
-                        $job->user_id, 3, StringTemplate::typeMessage(Constants::MSG_CLOCK_IN, $job->event_name, null, $job->id));
                     return ResponseFormatter::successResponse("Clock-in request sent");
                 }
             }
@@ -612,10 +612,8 @@ class SecurityJobController extends Controller
                 if ($extraTime) {
                     return ResponseFormatter::errorResponse("Customer requested you for 1 more hour.");
                 } else {
-                    $clock_out = JobFunctions::clockOutRequests($request, $job_details);
+                    $clock_out = JobFunctions::clockOutRequests($request, $job_details,$job);
                     if ($clock_out == true) {
-                        (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
-                            $job->user_id, 4, StringTemplate::typeMessage(Constants::MSG_CLOCK_OUT, $job_details->jobs->event_name, null, $job_details->job_id));
                         return ResponseFormatter::successResponse("Clock-out request sent");
                     } else
                         return ResponseFormatter::errorResponse("Clock-out request sent but message couldn't be delivered");
@@ -687,7 +685,8 @@ class SecurityJobController extends Controller
                 $job->additional_hour_request = Constants::ACTIVE;
                 $job->additional_hours = $request->input("extra_time");
                 $job->update();
-//                TODO Push notification
+                (new NotificationController())->addNotifications($job_id, $job->user_id, $job->security_jobs->guard_id,
+                     5, StringTemplate::typeMessage(Constants::EXTRA_TIME, $job->event_name, null, $job->id));
                 return ResponseFormatter::successResponse("Extra time request sent");
             } else {
                 return ResponseFormatter::errorResponse("Extra time request already sent");
@@ -720,11 +719,13 @@ class SecurityJobController extends Controller
                 if ($request->input("status") == 0) {
                     $job->additional_hours_accepted = Constants::REJECTED;
                     $job->update();
-//                    JobFunctions::clockOutRequests($request, $job_details);
+                    (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                        $job->user_id, 7, StringTemplate::typeMessage(Constants::EXTRA_TIME_REJECTED, $job->event_name, null, $job->id));
+
                 } else {
                     JobFunctions::checkAdditionalTime($job, $job_details);
                     (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
-                        $job->user_id, 6, null);
+                        $job->user_id, 6, StringTemplate::typeMessage(Constants::EXTRA_TIME_ACCEPTED, $job->event_name, null, $job->id));
                 }
 
                 return ResponseFormatter::successResponse("Extra time request status updated");

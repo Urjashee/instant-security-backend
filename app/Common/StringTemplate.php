@@ -36,16 +36,26 @@ class StringTemplate
             case(9):
                 return "Your request for " . $job . " has been rejected";
                 break;
+            case(10):
+                return "Extra time request for  " . $job;
+                break;
+            case(11):
+                return "Extra time request for  " . $job . " has been accepted";
+                break;
+            case(12):
+                return "Extra time request for  " . $job . " has been rejected";
+                break;
             default:
                 return 'Something went wrong.';
         }
 
     }
+
     public static function notifications($type): string
     {
         switch($type) {
             case(1):
-                return "Job selected";
+                return "Job assigned";
                 break;
             case(2):
                 return "Job cancelled";
@@ -63,7 +73,72 @@ class StringTemplate
                 return "Additional time accepted";
                 break;
             case(7):
+                return "Additional time rejected";
+                break;
+            case(8):
                 return "Someone is chatting";
+                break;
+            default:
+                return 'Something went wrong.';
+        }
+    }
+    public static function notificationsTitle($type,$job): string
+    {
+        switch($type) {
+            case(1):
+                return "Job assigned for " .$job;
+                break;
+            case(2):
+                return "Job cancelled for " . $job;
+                break;
+            case(3):
+                return "Clock-in request for the job ". $job;
+                break;
+            case(4):
+                return "Clock-out request for the job ". $job;
+                break;
+            case(5):
+                return "Request additional time for the job ". $job;
+                break;
+            case(6):
+                return "Additional time accepted for the job ". $job;
+                break;
+            case(7):
+                return "Additional time rejected for the job ". $job;
+                break;
+            case(8):
+                return "Someone is chatting on the job ". $job;
+                break;
+            default:
+                return 'Something went wrong.';
+        }
+    }
+    public static function notificationsMessage($type,$user): string
+    {
+        switch($type) {
+            case(1):
+                return $user . " was assigned the job";
+                break;
+            case(2):
+                return $user . " cancelled the job";
+                break;
+            case(3):
+                return $user . " sent you a request for clock-in time.";
+                break;
+            case(4):
+                return $user . " sent you a request for clock-out time.";
+                break;
+            case(5):
+                return "Request additional time";
+                break;
+            case(6):
+                return $user . " accepted the additional time";
+                break;
+            case(7):
+                return $user . " rejected the additional time";
+                break;
+            case(8):
+                return "Someone is chatting on the job";
                 break;
             default:
                 return 'Something went wrong.';

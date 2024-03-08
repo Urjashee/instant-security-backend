@@ -4,9 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Common\FcmNotification;
 use App\Common\ResponseFormatter;
+use App\Common\StringTemplate;
+use App\Constants;
 use App\Models\DeviceTokens;
 use App\Models\Notification;
+use App\Models\Notifications;
+use App\Models\UserProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 
 class NotificationController extends Controller
 {
@@ -17,14 +22,16 @@ class NotificationController extends Controller
         $newNotifications->notification_user_id = $notification_user_id;
         $newNotifications->type = $type;
         $newNotifications->save();
-//        $newNotifications->refresh();
-        $tokens = DeviceTokens::where("user_id",$notification_user_id)->get();
+
+        $tokens = DeviceTokens::where("user_id", $notification_user_id)
+            ->whereNotNull("device_token")
+            ->get();
         if ($tokens) {
             foreach ($tokens as $token) {
                 try {
                     FcmNotification::fcmPushNotification(
                         $token->device_token,
-                        "Clock In",
+                        StringTemplate::notifications($type),
                         $message);
                 } catch (\Exception $e) {
                     return ResponseFormatter::errorResponse($e->getMessage());
@@ -33,12 +40,45 @@ class NotificationController extends Controller
         }
     }
 
-    public function getNotifications(Request $request) {
-
+    public function getNotifications(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $s3SiteName = Config::get('constants.s3_bucket');
+        $contentsDecoded = [];
+        $notificationData = [];
+        $notifications = Notification::where("notification_user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+            ->orderBy("created_at", "desc")
+            ->get();
+        if ($notifications) {
+            foreach ($notifications as $notification) {
+                $user_profile = UserProfile::where('user_id', $notification->user_id)->first();
+                $contentsDecoded [] = [
+                    "notification_id" => $notification->id,
+                    "notification_type_id" => $notification->type,
+                    "notification_type" => StringTemplate::notifications($notification->type),
+                    "guard_id" => $notification->user_id,
+                    "guard_name" => $notification->user->first_name . " " . $notification->user->last_name,
+                    "guard_image" => $user_profile->profile_image == null ? "" : $s3SiteName . $user_profile->profile_image,
+                    "job_id" => $notification->job_id,
+                    "title" => StringTemplate::notificationsTitle($notification->type, $notification->jobs->event_name),
+                    "message" => StringTemplate::notificationsMessage($notification->type, $notification->user->first_name . " " . $notification->user->last_name),
+                ];
+            }
+            return ResponseFormatter::successResponse("Notifications", $contentsDecoded);
+        } else {
+            return ResponseFormatter::errorResponse("No notifications");
+        }
     }
 
-    public function countNotifications(Request $request) {
-
+    public function countNotifications(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $countNotifications = Notification::where("notification_user_id",$request->input(Constants::CURRENT_USER_ID_KEY))
+            ->where("read",0)
+            ->count();
+        if ($countNotifications > 0) {
+            return ResponseFormatter::successResponse("Notification count", $countNotifications);
+        } else {
+            return ResponseFormatter::errorResponse("No unread notification");
+        }
     }
 
     public function readNotifications(Request $request) {

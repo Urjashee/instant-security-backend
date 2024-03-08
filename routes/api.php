@@ -102,6 +102,9 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
             Route::group(['prefix' => '/faq'], function () {
                 Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
             });
+            Route::group(['prefix' => '/notifications'], function () {
+                Route::get("/", [\App\Http\Controllers\NotificationController::class, 'getNotifications']);
+            });
         });
     });
 

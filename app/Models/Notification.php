@@ -14,4 +14,17 @@ use Illuminate\Database\Eloquent\Model;
 class Notification extends Model
 {
     use HasFactory;
+    protected $with = ["user", "user_profile_data", "jobs"];
+    public function user()
+    {
+        return $this->belongsTo(User::class, "user_id");
+    }
+    public function user_profile_data()
+    {
+        return $this->belongsTo(UserProfile::class, "user_id");
+    }
+    public function jobs()
+    {
+        return $this->belongsTo(SecurityJob::class, "job_id");
+    }
 }
