@@ -175,10 +175,17 @@ class JobFunctions
                     $job->job_status == Constants::UPCOMING ||
                     $job->job_status == Constants::REJECTED_JOB ||
                     $job->job_status == Constants::PENDING)) {
-                $content_data += [
-                    "job_status_id" => $job->job_status,
-                    "job_status_name" => ConfigList::jobType($job->job_status),
-                ];
+                if ($job->job_status == Constants::OPEN) {
+                    $content_data += [
+                        "job_status_id" => Constants::UPCOMING,
+                        "job_status_name" => ConfigList::jobType(Constants::UPCOMING),
+                    ];
+                } else {
+                    $content_data += [
+                        "job_status_id" => $job->job_status,
+                        "job_status_name" => ConfigList::jobType($job->job_status),
+                    ];
+                }
             } else if ($role == 1 && ($job->job_status == 0 || $job->job_status == 1)) {
                 $applied_jobs = JobAppliedGuard::where('job_id', $job->id)
                     ->where('assigned',Constants::INACTIVE)

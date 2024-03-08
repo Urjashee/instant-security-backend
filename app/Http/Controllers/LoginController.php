@@ -84,7 +84,7 @@ class LoginController extends Controller
 
             if (Hash::check($request->input("password"), $user->password)) {
                 list($token, $refreshToken) = UserFunctions::generateToken($user);
-                if ($request->has("device_token")) {
+                if ($request->has("device_token") && $request->input("device_token") !== null) {
                     $this->deviceToken($user, $request, $token);
                 }
 
@@ -138,19 +138,24 @@ class LoginController extends Controller
 
     public function logout(Request $request): \Illuminate\Http\JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            "device_token" => "required",
-        ]);
-        if ($validator->fails())
-            return ResponseFormatter::errorResponse( $validator->errors()->first());
-
-        $deviceToken = DeviceTokens::where('device_token',$request->input("device_token"));
-        if ($deviceToken) {
-            $deviceToken->delete();
-            return ResponseFormatter::successResponse("User Logged out");
+        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::MOBILE_USER) {
+            $validator = Validator::make($request->all(), [
+                "device_token" => "required",
+            ]);
+            if ($validator->fails())
+                return ResponseFormatter::errorResponse($validator->errors()->first());
         }
-        else {
-            return ResponseFormatter::errorResponse( "Cannot log out");
+
+        if ($request->has("device_token") && $request->input("device_token") != null) {
+            $deviceToken = DeviceTokens::where('device_token', $request->input("device_token"));
+            if ($deviceToken) {
+                $deviceToken->delete();
+                return ResponseFormatter::successResponse("User Logged out");
+            } else {
+                return ResponseFormatter::errorResponse("Cannot log out");
+            }
+        } else {
+            return ResponseFormatter::successResponse("User Logged out");
         }
     }
 

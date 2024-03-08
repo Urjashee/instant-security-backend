@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 
 class FcmNotification{
-    public static function fcmPushNotification($firebaseToken, $title, $body)
+    public static function fcmPushNotification($firebaseToken, $title, $body): string
     {
         //$SERVER_API_KEY = env('FCM_SERVER_KEY');
 
@@ -34,10 +34,15 @@ class FcmNotification{
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
 
-        $response = curl_exec($ch);
-
-        return back()->with('success', 'Notification send successfully.');
+        $result = curl_exec($ch);
+        if ($result === FALSE) {
+            die('Curl failed: ' . curl_error($ch));
+        }
+        // Close connection
+        curl_close($ch);
+        // FCM response
+        return $result;
 
     }
 }
-?>
+
