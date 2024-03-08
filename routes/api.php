@@ -104,6 +104,8 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
             });
             Route::group(['prefix' => '/notifications'], function () {
                 Route::get("/", [\App\Http\Controllers\NotificationController::class, 'getNotifications']);
+                Route::get("/count", [\App\Http\Controllers\NotificationController::class, 'countNotifications']);
+                Route::patch("/read/{id}", [\App\Http\Controllers\NotificationController::class, 'readNotifications']);
             });
         });
     });

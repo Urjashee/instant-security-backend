@@ -61,6 +61,7 @@ class NotificationController extends Controller
                     "job_id" => $notification->job_id,
                     "title" => StringTemplate::notificationsTitle($notification->type, $notification->jobs->event_name),
                     "message" => StringTemplate::notificationsMessage($notification->type, $notification->user->first_name . " " . $notification->user->last_name),
+                    "read" => $notification->read
                 ];
             }
             return ResponseFormatter::successResponse("Notifications", $contentsDecoded);
@@ -81,8 +82,18 @@ class NotificationController extends Controller
         }
     }
 
-    public function readNotifications(Request $request) {
-
+    public function readNotifications(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+        $getNotification = Notification::where("id", $id)
+            ->where("read", 0)
+            ->first();
+        if ($getNotification) {
+            $getNotification->read = 1;
+            $getNotification->update();
+            return ResponseFormatter::successResponse("Notification updated");
+        } else {
+            return ResponseFormatter::errorResponse("Notification not there");
+        }
     }
 
     public function sendFcm(Request $request): \Illuminate\Http\JsonResponse
