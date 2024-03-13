@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\Config;
 
 class NotificationController extends Controller
 {
-    public function addNotifications($job_id, $user_id, $notification_user_id, $type, $message) {
+    public function addNotifications($job_id, $user_id, $notification_user_id, $type, $message)
+    {
         $newNotifications = new Notification();
         $newNotifications->job_id = $job_id;
         $newNotifications->user_id = $user_id;
@@ -46,23 +47,25 @@ class NotificationController extends Controller
         $contentsDecoded = [];
         $notificationData = [];
         $notifications = Notification::where("notification_user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+            ->where("type","!=", 5)
             ->orderBy("created_at", "desc")
             ->get();
         if ($notifications) {
             foreach ($notifications as $notification) {
                 $user_profile = UserProfile::where('user_id', $notification->user_id)->first();
-                $contentsDecoded [] = [
-                    "notification_id" => $notification->id,
-                    "notification_type_id" => $notification->type,
-                    "notification_type" => StringTemplate::notifications($notification->type),
-                    "guard_id" => $notification->user_id,
-                    "guard_name" => $notification->user->first_name . " " . $notification->user->last_name,
-                    "guard_image" => $user_profile->profile_image == null ? "" : $s3SiteName . $user_profile->profile_image,
-                    "job_id" => $notification->job_id,
-                    "title" => StringTemplate::notificationsTitle($notification->type, $notification->jobs->event_name),
-                    "message" => StringTemplate::notificationsMessage($notification->type, $notification->user->first_name . " " . $notification->user->last_name),
-                    "read" => $notification->read
-                ];
+                if ($user_profile)
+                    $contentsDecoded [] = [
+                        "notification_id" => $notification->id,
+                        "notification_type_id" => $notification->type,
+                        "notification_type" => StringTemplate::notifications($notification->type),
+                        "guard_id" => $notification->user_id,
+                        "guard_name" => $notification->user->first_name . " " . $notification->user->last_name,
+                        "guard_image" => $user_profile->profile_image == null ? "" : $s3SiteName . $user_profile->profile_image,
+                        "job_id" => $notification->job_id,
+                        "title" => StringTemplate::notificationsTitle($notification->type, $notification->jobs->event_name),
+                        "message" => StringTemplate::notificationsMessage($notification->type, $notification->user->first_name . " " . $notification->user->last_name),
+                        "read" => $notification->read
+                    ];
             }
             return ResponseFormatter::successResponse("Notifications", $contentsDecoded);
         } else {
@@ -72,8 +75,8 @@ class NotificationController extends Controller
 
     public function countNotifications(Request $request): \Illuminate\Http\JsonResponse
     {
-        $countNotifications = Notification::where("notification_user_id",$request->input(Constants::CURRENT_USER_ID_KEY))
-            ->where("read",0)
+        $countNotifications = Notification::where("notification_user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+            ->where("read", 0)
             ->count();
         if ($countNotifications > 0) {
             return ResponseFormatter::successResponse("Notification count", $countNotifications);
@@ -96,6 +99,7 @@ class NotificationController extends Controller
         }
     }
 
+//    This is for testing
     public function sendFcm(Request $request): \Illuminate\Http\JsonResponse
     {
         try {

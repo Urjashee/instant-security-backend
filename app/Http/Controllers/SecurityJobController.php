@@ -438,7 +438,7 @@ class SecurityJobController extends Controller
                 }
             }
 
-            (new NotificationController())->addNotifications($job_id, $user_id, $job->user_id, 1,null);
+            (new NotificationController())->addNotifications($job_id, $user_id, $job->user_id, 1, null);
             return ResponseFormatter::successResponse("Job has been updated");
         } else {
             return ResponseFormatter::errorResponse("Job has already been filled");
@@ -499,36 +499,45 @@ class SecurityJobController extends Controller
         else {
             $job = SecurityJob::where("id", $job_id)
                 ->where("job_status", Constants::UPCOMING)
+                ->orWhere("job_status", Constants::PENDING)
+                ->orWhere("job_status", Constants::OPEN)
                 ->first();
-            if ($job->security_jobs->clock_in_request_accepted == Constants::DENIED) {
-                try {
-                    TwillioHelper::deleteConversationWithSid($job->chat_sid);
-                } catch (\Exception $e) {
-                    return ResponseFormatter::errorResponse($e->getMessage());
+            $job_details = JobDetail::where("job_id", $job_id)->first();
+            if ($job_details) {
+                if ($job_details->clock_in_request_accepted == Constants::ACCEPTED) {
+                    return ResponseFormatter::errorResponse("Can't cancel once the job has started");
+                } else {
+                    $job_details->chat_sid = null;
+                    $job_details->participant_id = null;
+                    $job_details->update();
+                    try {
+                        TwillioHelper::deleteConversationWithSid($job->chat_sid);
+                    } catch (\Exception $e) {
+                        return ResponseFormatter::errorResponse($e->getMessage());
+                    }
                 }
-                $job->security_jobs->chat_sid = null;
-                $job->security_jobs->participant_id = null;
+            }
 
-                $job->job_status = Constants::CANCELLED;
-                $job->chat_sid = null;
-                $job->chat_service_sid = null;
-                $job->participant_id = null;
-                $job->security_jobs->update();
-                $job->update();
-                try {
-                    StripeHelper::deleteInvoiceItem($job->invoice_item_id);
-                } catch (\Exception $e) {
-                    return ResponseFormatter::errorResponse($e->getMessage());
-                }
+            $job->job_status = Constants::CANCELLED;
+            $job->chat_sid = null;
+            $job->chat_service_sid = null;
+            $job->participant_id = null;
+
+            $job->update();
+            try {
+                StripeHelper::deleteInvoiceItem($job->invoice_item_id);
+            } catch (\Exception $e) {
+                return ResponseFormatter::errorResponse($e->getMessage());
+            }
+            if ($job_details) {
                 try {
                     StripeHelper::voidInvoices($job->invoice_id);
                 } catch (\Exception $e) {
                     return ResponseFormatter::errorResponse($e->getMessage());
                 }
-                return ResponseFormatter::successResponse("Job cancelled successfully");
-            } else {
-                return ResponseFormatter::errorResponse("Can't cancel once the job has started");
             }
+            return ResponseFormatter::successResponse("Job cancelled successfully");
+
         }
     }
 
@@ -576,7 +585,7 @@ class SecurityJobController extends Controller
 
     public function clockInResponse(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
     {
-        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER || Constants::ADMIN_USER);
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
@@ -612,7 +621,7 @@ class SecurityJobController extends Controller
                 if ($extraTime) {
                     return ResponseFormatter::errorResponse("Customer requested you for 1 more hour.");
                 } else {
-                    $clock_out = JobFunctions::clockOutRequests($request, $job_details,$job);
+                    $clock_out = JobFunctions::clockOutRequests($request, $job_details, $job);
                     if ($clock_out == true) {
                         return ResponseFormatter::successResponse("Clock-out request sent");
                     } else
@@ -626,7 +635,7 @@ class SecurityJobController extends Controller
 
     public function clockOutResponse(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
     {
-        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER || Constants::ADMIN_USER);
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
@@ -686,7 +695,7 @@ class SecurityJobController extends Controller
                 $job->additional_hours = $request->input("extra_time");
                 $job->update();
                 (new NotificationController())->addNotifications($job_id, $job->user_id, $job->security_jobs->guard_id,
-                     5, StringTemplate::typeMessage(Constants::EXTRA_TIME, $job->event_name, null, $job->id));
+                    5, StringTemplate::typeMessage(Constants::EXTRA_TIME, $job->event_name, null, $job->id));
                 return ResponseFormatter::successResponse("Extra time request sent");
             } else {
                 return ResponseFormatter::errorResponse("Extra time request already sent");
@@ -827,7 +836,8 @@ class SecurityJobController extends Controller
         }
     }
 
-    public function autoClockOut() {
+    public function autoClockOut()
+    {
         $job_details = JobDetail::where("clock_in_request_accepted", Constants::ACCEPTED)
             ->where("clock_out_request", Constants::INACTIVE)
             ->get();
@@ -835,7 +845,7 @@ class SecurityJobController extends Controller
             foreach ($job_details as $job_detail) {
                 $jobs = SecurityJob::where("id", $job_detail->job_id)
                     ->where("event_end", "<", time())
-                    ->where("additional_hours_accepted",0)
+                    ->where("additional_hours_accepted", 0)
                     ->first();
                 if ($jobs) {
                     $jobs->job_status = Constants::COMPLETED;
