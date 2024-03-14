@@ -78,6 +78,12 @@ class StringTemplate
             case(8):
                 return "Someone is chatting";
                 break;
+            case(9):
+                return "Job has been accepted";
+                break;
+            case(10):
+                return "Job has been rejected";
+                break;
             default:
                 return 'Something went wrong.';
         }

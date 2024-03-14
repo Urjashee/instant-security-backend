@@ -48,6 +48,9 @@ class JobFunctions
                 return (false);
             }
         }
+        if ($type == Constants::ADMIN_USER) {
+            return true;
+        }
     }
 
     public static function checkUserStatus($user_id): bool

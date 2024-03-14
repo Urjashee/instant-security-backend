@@ -810,7 +810,7 @@ class SecurityJobController extends Controller
         }
     }
 
-    public function reviewJob($job_id, $status): \Illuminate\Http\JsonResponse
+    public function reviewJob(Request $request,$job_id, $status): \Illuminate\Http\JsonResponse
     {
         $job = SecurityJob::where("job_status", Constants::PENDING)
             ->where('id', $job_id)
@@ -819,17 +819,22 @@ class SecurityJobController extends Controller
             $user = User::where("id", $job->user_id)->first();
             $job->job_status = $status;
             $job->update();
-            if ($status == 0)
+            if ($status == 0) {
                 JobInformation::dispatch(
                     $user->email,
                     StringTemplate::typeMessage(Constants::MSG_JOB_ACCEPTED, $job->event_name, null, $job->id),
                 );
-            if ($status == 7)
+                (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                    $job->user_id, 9, StringTemplate::typeMessage(Constants::MSG_JOB_ACCEPTED, $job->event_name, null, $job->id));
+            }
+            if ($status == 7) {
                 JobInformation::dispatch(
                     $user->email,
                     StringTemplate::typeMessage(Constants::MSG_JOB_REJECTED, $job->event_name, null, $job->id),
                 );
-//            TODO Notification push notification
+                (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
+                    $job->user_id, 10, StringTemplate::typeMessage(Constants::MSG_JOB_REJECTED, $job->event_name, null, $job->id));
+            }
             return ResponseFormatter::successResponse("Jobs has been updated");
         } else {
             return ResponseFormatter::errorResponse("No Jobs");
