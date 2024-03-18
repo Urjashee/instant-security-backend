@@ -192,10 +192,10 @@ class JobFunctions
                 }
             } else if ($role == 1 && ($job->job_status == 0 || $job->job_status == 1)) {
                 $applied_jobs = JobAppliedGuard::where('job_id', $job->id)
-                    ->where('assigned',Constants::INACTIVE)
+                    ->where('assigned', Constants::INACTIVE)
                     ->get();
                 $applied_jobs_active = JobAppliedGuard::where('job_id', $job->id)
-                    ->where('assigned',Constants::ACTIVE)
+                    ->where('assigned', Constants::ACTIVE)
                     ->first();
                 if ($applied_jobs_active) {
                     $assigned_job_true = true;
@@ -218,12 +218,14 @@ class JobFunctions
                         "job_status_id" => 9,
                         "job_status_name" => ConfigList::jobType(9),
                     ];
-                } if (!$assigned_job_true && $assigned_job_all) {
+                }
+                if (!$assigned_job_true && $assigned_job_all) {
                     $content_data += [
                         "job_status_id" => 8,
                         "job_status_name" => ConfigList::jobType(8),
                     ];
-                } if (!$assigned_job_true && !$assigned_job_all){
+                }
+                if (!$assigned_job_true && !$assigned_job_all) {
                     $content_data += [
                         "job_status_id" => $job->job_status,
                         "job_status_name" => ConfigList::jobType($job->job_status),
@@ -252,14 +254,12 @@ class JobFunctions
                         "job_status_id" => Constants::UPCOMING,
                         "job_status_name" => "Clock-in request",
                     ];
-                }
-                else if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 1 && $job_detail->clock_out_request == 0) {
+                } else if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 1 && $job_detail->clock_out_request == 0) {
                     $content_data += [
                         "job_status_id" => Constants::ONGOING,
                         "job_status_name" => ConfigList::jobType(Constants::ONGOING),
                     ];
-                }
-                else if ($job_detail->clock_out_request == 1 && $job_detail->clock_out_request_accepted == 0) {
+                } else if ($job_detail->clock_out_request == 1 && $job_detail->clock_out_request_accepted == 0) {
                     $content_data += [
                         "job_status_id" => Constants::ONGOING,
                         "job_status_name" => "Clock-out request",
@@ -293,14 +293,14 @@ class JobFunctions
         if ($status == 6) {
             if ($job->job_status == Constants::PENDING)
                 $content_data += [
-                "job_status_id" => Constants::PENDING,
-                "job_status_name" => ConfigList::jobType(Constants::PENDING),
-            ];
+                    "job_status_id" => Constants::PENDING,
+                    "job_status_name" => ConfigList::jobType(Constants::PENDING),
+                ];
             if ($job->job_status == Constants::REJECTED_JOB)
                 $content_data += [
-                "job_status_id" => Constants::REJECTED_JOB,
-                "job_status_name" => ConfigList::jobType(Constants::REJECTED_JOB),
-            ];
+                    "job_status_id" => Constants::REJECTED_JOB,
+                    "job_status_name" => ConfigList::jobType(Constants::REJECTED_JOB),
+                ];
         }
         if ($job->job_status == 1 || $job->job_status == 2) {
             $content_data += [
@@ -417,9 +417,19 @@ class JobFunctions
             "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
         ];
         if ($status == 0) {
+            $content_data += [
+                "job_description" => $jobs->job_description,
+                "job_roles_and_responsibility" => $jobs->roles_and_responsibility,
+                "job_price" => $jobs->price,
+                "job_max_price" => $jobs->max_price,
+                "job_status_id" => $jobs->job_status,
+                "job_status_name" => ConfigList::jobType($jobs->job_status),
+            ];
+        }
+        if ($status == 1) {
             $applied_job = JobAppliedGuard::where('guard_id', $user_id)
-                ->where('job_id', $jobs->id)
-                ->first();
+            ->where('job_id', $jobs->id)
+            ->first();
             if ($applied_job) {
                 $content_data += [
                     "job_description" => $jobs->job_description,
@@ -429,18 +439,7 @@ class JobFunctions
                     "job_status_id" => 8,
                     "job_status_name" => ConfigList::jobType(8),
                 ];
-            } else {
-                $content_data += [
-                    "job_description" => $jobs->job_description,
-                    "job_roles_and_responsibility" => $jobs->roles_and_responsibility,
-                    "job_price" => $jobs->price,
-                    "job_max_price" => $jobs->max_price,
-                    "job_status_id" => $jobs->job_status,
-                    "job_status_name" => ConfigList::jobType($jobs->job_status),
-                ];
             }
-        }
-        if ($status == 1) {
             if ($job_details->clock_in_request == 1 && $job_details->clock_in_request_accepted == 1) {
                 $content_data += [
                     "job_status_id" => 4,
@@ -473,7 +472,7 @@ class JobFunctions
         }
     }
 
-    public static function clockOutRequests($request, $job_details,$job): bool
+    public static function clockOutRequests($request, $job_details, $job): bool
     {
         $job_details->clock_out_request = Constants::ACCEPTED;
         $job_details->clock_out_time = $request->input("clock_out_time");
