@@ -19,7 +19,7 @@ class ChatController extends Controller
         if ($user) {
             try {
                 $token = TwillioHelper::generateTokenForIdentity($user->friendly_name,
-                    $security_job->chat_sid);
+                    $security_job->chat_service_sid);
             } catch (\Exception $e) {
                 return ResponseFormatter::errorResponse("Chat already created", $e);
             }
