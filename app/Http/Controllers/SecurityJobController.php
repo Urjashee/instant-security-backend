@@ -158,6 +158,7 @@ class SecurityJobController extends Controller
                 ->orWhere("job_status", Constants::PENDING)
                 ->orWhere("job_status", Constants::REJECTED_JOB)
                 ->orWhere("job_status", Constants::UPCOMING)
+                ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         }
@@ -194,7 +195,9 @@ class SecurityJobController extends Controller
                 ->get();
         }
         if ($status == 0) {
-            $jobs = SecurityJob::where("job_status", Constants::OPEN)->orWhere("job_status", Constants::UPCOMING)
+            $jobs = SecurityJob::where("job_status", Constants::OPEN)
+                ->orWhere("job_status", Constants::UPCOMING)
+                ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         } else {
@@ -330,17 +333,25 @@ class SecurityJobController extends Controller
         if ($request->query("status")) {
             $status = $request->query("status");
         }
-        $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-            ->orderBy("job_details.created_at", "DESC")
+        $jobs = SecurityJob::where("job_status", $status)
+            ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
+            ->orderBy("created_at","DESC")
             ->get();
+//        $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+//            ->orderBy("job_details.created_at", "DESC")
+//            ->get();
         if ($jobs) {
             foreach ($jobs as $job) {
-                $security_jobs = SecurityJob::where("id", $job->job_id)->where("job_status", $status)->first();
-                if ($security_jobs) {
-                    $customer_profile = CustomerProfile::where("user_id", $security_jobs->user_id)->first();
-                    $view_jobs_data = JobFunctions::viewJobs($security_jobs, $customer_profile, $status, $job, null);
+                $job_detail = JobDetail::where("job_id", $job->id)->first();
+//                $security_jobs = SecurityJob::where("id", $job->job_id)
+//                    ->where("job_status", $status)
+//                    ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
+//                    ->first();
+//                if ($security_jobs) {
+                    $customer_profile = CustomerProfile::where("user_id", $job->user_id)->first();
+                    $view_jobs_data = JobFunctions::viewJobs($job, $customer_profile, $status, $job_detail, null);
                     $content_data[] = $view_jobs_data;
-                }
+//                }
             }
             return ResponseFormatter::successResponse("Jobs", $content_data);
         } else {
@@ -376,6 +387,13 @@ class SecurityJobController extends Controller
                 $assignJob->job_id = $job_id;
                 $assignJob->guard_id = $user->id;
                 $assignJob->save();
+                $security_job = SecurityJob::where("id",$job_id)
+                    ->where("job_status",Constants::OPEN)
+                    ->first();
+                if ($security_job) {
+                    $security_job->job_status = Constants::PENDING_ASSIGNMENT;
+                    $security_job->update();
+                }
                 return ResponseFormatter::successResponse("Request sent");
             }
         } else {
