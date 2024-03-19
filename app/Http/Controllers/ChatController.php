@@ -26,6 +26,7 @@ class ChatController extends Controller
             $chatToken = [
                 'token' => $token,
                 'identifier' => $user->friendly_name,
+                'chat_id' => $security_job->chat_sid,
             ];
             return ResponseFormatter::successResponse("Token", $chatToken);
         }

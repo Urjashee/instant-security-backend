@@ -170,6 +170,7 @@ class JobFunctions
             "job_posted_by_id" => $job->user_id,
             "job_posted_by_name" => $job->users->first_name . " " . $job->users->last_name,
             "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
+            "job_chat_id" => $job->chat_sid == null ? "" : $job->chat_sid,
         ];
 
         if ($status == 0) {
