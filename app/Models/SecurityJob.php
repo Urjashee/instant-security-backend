@@ -34,7 +34,7 @@ use Illuminate\Database\Eloquent\Model;
 class SecurityJob extends Model
 {
     use HasFactory;
-    protected $with = ["state","users","job_type","user_profile"];
+    protected $with = ["state","users","job_type","user_profile","customer_profile"];
     public function state(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(State::class, "state_id");
@@ -46,6 +46,10 @@ class SecurityJob extends Model
     public function user_profile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(UserProfile::class, "user_id");
+    }
+    public function customer_profile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(CustomerProfile::class, "user_id");
     }
     public function job_type(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
