@@ -326,6 +326,47 @@ class SecurityJobController extends Controller
         return ResponseFormatter::successResponse("Job list", $content_data);
     }
 
+    public function selectedJobsNone(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $content_data = array();
+        $status = Constants::UPCOMING;
+        if ($request->query("status")) {
+            $status = $request->query("status");
+        }
+        if ($status == Constants::UPCOMING) {
+            $jobs = SecurityJob::where("job_status", $status)
+                ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
+                ->orderBy("created_at", "DESC")
+                ->get();
+        }
+        if ($status == Constants::COMPLETED) {
+            $jobs = SecurityJob::where("job_status", $status)
+                ->orderBy("created_at", "DESC")
+                ->get();
+        }
+//        $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+//            ->orderBy("job_details.created_at", "DESC")
+//            ->get();
+        if ($jobs) {
+            foreach ($jobs as $job) {
+                $job_detail = JobDetail::where("job_id", $job->id)
+                    ->first();
+//                $security_jobs = SecurityJob::where("id", $job->job_id)
+//                    ->where("job_status", $status)
+//                    ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
+//                    ->first();
+//                if ($security_jobs) {
+                $customer_profile = CustomerProfile::where("user_id", $job->user_id)->first();
+                $view_jobs_data = JobFunctions::viewJobs($job, $customer_profile, $status, $job_detail, null);
+                $content_data[] = $view_jobs_data;
+//                }
+            }
+            return ResponseFormatter::successResponse("Jobs", $content_data);
+        } else {
+            return ResponseFormatter::errorResponse("No job records");
+        }
+    }
+
     public function selectedJobs(Request $request): \Illuminate\Http\JsonResponse
     {
         $content_data = array();
@@ -333,29 +374,48 @@ class SecurityJobController extends Controller
         if ($request->query("status")) {
             $status = $request->query("status");
         }
-        $jobs = SecurityJob::where("job_status", $status)
-            ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
-            ->orderBy("created_at","DESC")
-            ->get();
-//        $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-//            ->orderBy("job_details.created_at", "DESC")
-//            ->get();
-        if ($jobs) {
-            foreach ($jobs as $job) {
-                $job_detail = JobDetail::where("job_id", $job->id)->first();
-//                $security_jobs = SecurityJob::where("id", $job->job_id)
-//                    ->where("job_status", $status)
-//                    ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
-//                    ->first();
-//                if ($security_jobs) {
+        if ($status == Constants::UPCOMING) {
+            $jobs = DB::table("security_jobs")
+                ->leftJoin("job_details", "security_jobs.id", "=", "job_details.job_id")
+                ->leftJoin("job_applied_guards", "security_jobs.id", "=", "job_applied_guards.job_id")
+                ->select("security_jobs.*","security_jobs.id as security_id","job_details.*","job_applied_guards.*")
+                ->where("security_jobs.job_status", Constants::UPCOMING)
+                ->where("security_jobs.job_status", Constants::PENDING_ASSIGNMENT)
+                ->where("job_details.guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                ->orWhere("job_applied_guards.guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                ->get();
+            if ($jobs) {
+                foreach ($jobs as $job) {
                     $customer_profile = CustomerProfile::where("user_id", $job->user_id)->first();
-                    $view_jobs_data = JobFunctions::viewJobs($job, $customer_profile, $status, $job_detail, null);
+                    $view_jobs_data = JobFunctions::viewSelectedJobs($customer_profile, $status, $job, $request->input(Constants::CURRENT_USER_ID_KEY));
+//                    $content_data[] = $job->security_id;
                     $content_data[] = $view_jobs_data;
-//                }
+                }
+                $content_data = array_filter($content_data);
+                $content_data = array_values($content_data);
+                return ResponseFormatter::successResponse("Jobs", $content_data);
+            } else {
+                return ResponseFormatter::errorResponse("No job records");
             }
-            return ResponseFormatter::successResponse("Jobs", $content_data);
-        } else {
-            return ResponseFormatter::errorResponse("No job records");
+
+        }
+        if ($status == Constants::COMPLETED) {
+            $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                ->orderBy("job_details.created_at", "DESC")
+                ->get();
+            if ($jobs) {
+                foreach ($jobs as $job) {
+                    $security_jobs = SecurityJob::where("id", $job->job_id)->where("job_status", $status)->first();
+                    if ($security_jobs) {
+                        $customer_profile = CustomerProfile::where("user_id", $security_jobs->user_id)->first();
+                        $view_jobs_data = JobFunctions::viewJobs($security_jobs, $customer_profile, $status, $job, null);
+                        $content_data[] = $view_jobs_data;
+                    }
+                }
+                return ResponseFormatter::successResponse("Jobs", $content_data);
+            } else {
+                return ResponseFormatter::errorResponse("No job records");
+            }
         }
     }
 
@@ -387,8 +447,8 @@ class SecurityJobController extends Controller
                 $assignJob->job_id = $job_id;
                 $assignJob->guard_id = $user->id;
                 $assignJob->save();
-                $security_job = SecurityJob::where("id",$job_id)
-                    ->where("job_status",Constants::OPEN)
+                $security_job = SecurityJob::where("id", $job_id)
+                    ->where("job_status", Constants::OPEN)
                     ->first();
                 if ($security_job) {
                     $security_job->job_status = Constants::PENDING_ASSIGNMENT;
@@ -828,7 +888,7 @@ class SecurityJobController extends Controller
         }
     }
 
-    public function reviewJob(Request $request,$job_id, $status): \Illuminate\Http\JsonResponse
+    public function reviewJob(Request $request, $job_id, $status): \Illuminate\Http\JsonResponse
     {
         $job = SecurityJob::where("job_status", Constants::PENDING)
             ->where('id', $job_id)

@@ -472,6 +472,53 @@ class JobFunctions
         }
         return $content_data;
     }
+    public static function viewSelectedJobs($customer_profile, $status, $jobs, $user_id): array
+    {
+        $s3SiteName = Config::get('constants.s3_bucket');
+        $job_status = null;
+        $content_data = [];
+        if ($status == 1) {
+            if ($jobs->job_status == 1) {
+                if ($jobs->clock_in_request == 1 && $jobs->clock_in_request_accepted == 1) {
+                    $content_data = [
+                        "job_id" => $jobs->security_id,
+                        "job_event_name" => $jobs->event_name,
+                        "job_start_date" => Carbon::createFromTimestamp($jobs->event_start)->format('Y-m-d\TH:i:s.uP'),
+                        "job_posted_by_name" => $customer_profile->user->first_name . " " . $customer_profile->user->last_name,
+                        "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
+                        "job_status_id" => 4,
+                        "job_status_name" => ConfigList::jobType(4),
+                    ];
+                } else {
+                    $content_data = [
+                        "job_id" => $jobs->security_id,
+                        "job_event_name" => $jobs->event_name,
+                        "job_start_date" => Carbon::createFromTimestamp($jobs->event_start)->format('Y-m-d\TH:i:s.uP'),
+                        "job_posted_by_name" => $customer_profile->user->first_name . " " . $customer_profile->user->last_name,
+                        "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
+                        "job_status_id" => 1,
+                        "job_status_name" => ConfigList::jobType(1),
+                    ];
+                }
+            }
+            if ($jobs->job_status == 8) {
+                $content_data = [
+                    "job_id" => $jobs->security_id,
+                    "job_event_name" => $jobs->event_name,
+                    "job_start_date" => Carbon::createFromTimestamp($jobs->event_start)->format('Y-m-d\TH:i:s.uP'),
+                    "job_posted_by_name" => $customer_profile->user->first_name . " " . $customer_profile->user->last_name,
+                    "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
+                    "job_status_id" => 8,
+                    "job_status_name" => ConfigList::jobType(8),
+                ];
+            }
+        }
+        if ($content_data !== []) {
+            return $content_data;
+        } else {
+            return [];
+        }
+    }
 
     public static function extraTimeRequest($job_id): bool
     {
