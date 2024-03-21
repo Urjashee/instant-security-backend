@@ -326,47 +326,6 @@ class SecurityJobController extends Controller
         return ResponseFormatter::successResponse("Job list", $content_data);
     }
 
-    public function selectedJobsNone(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $content_data = array();
-        $status = Constants::UPCOMING;
-        if ($request->query("status")) {
-            $status = $request->query("status");
-        }
-        if ($status == Constants::UPCOMING) {
-            $jobs = SecurityJob::where("job_status", $status)
-                ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
-                ->orderBy("created_at", "DESC")
-                ->get();
-        }
-        if ($status == Constants::COMPLETED) {
-            $jobs = SecurityJob::where("job_status", $status)
-                ->orderBy("created_at", "DESC")
-                ->get();
-        }
-//        $jobs = JobDetail::where("guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-//            ->orderBy("job_details.created_at", "DESC")
-//            ->get();
-        if ($jobs) {
-            foreach ($jobs as $job) {
-                $job_detail = JobDetail::where("job_id", $job->id)
-                    ->first();
-//                $security_jobs = SecurityJob::where("id", $job->job_id)
-//                    ->where("job_status", $status)
-//                    ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
-//                    ->first();
-//                if ($security_jobs) {
-                $customer_profile = CustomerProfile::where("user_id", $job->user_id)->first();
-                $view_jobs_data = JobFunctions::viewJobs($job, $customer_profile, $status, $job_detail, null);
-                $content_data[] = $view_jobs_data;
-//                }
-            }
-            return ResponseFormatter::successResponse("Jobs", $content_data);
-        } else {
-            return ResponseFormatter::errorResponse("No job records");
-        }
-    }
-
     public function selectedJobs(Request $request): \Illuminate\Http\JsonResponse
     {
         $content_data = array();
@@ -383,6 +342,7 @@ class SecurityJobController extends Controller
                 ->where("security_jobs.job_status", Constants::PENDING_ASSIGNMENT)
                 ->where("job_details.guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
                 ->orWhere("job_applied_guards.guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
             if ($jobs) {
                 foreach ($jobs as $job) {
@@ -416,6 +376,9 @@ class SecurityJobController extends Controller
             } else {
                 return ResponseFormatter::errorResponse("No job records");
             }
+        }
+        else {
+            return ResponseFormatter::errorResponse("No job records");
         }
     }
 

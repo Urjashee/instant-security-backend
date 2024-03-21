@@ -42,6 +42,7 @@ class JwtAuthMiddleware
                     Constants::CURRENT_PROFILE_STATUS_KEY => $token->getClaim("user_status"),
                     Constants::CURRENT_PROFILE_KEY => $token->getClaim("is_profile"),
                     Constants::CURRENT_FRIENDLY_NAME_KEY => $token->getClaim("friendly_name"),
+                    Constants::CURRENT_PROFILE_IMAGE_KEY => $token->getClaim("profile_image"),
                 ], $extra)));
             }
         } else
