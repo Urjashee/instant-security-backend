@@ -432,7 +432,7 @@ class SecurityJobController extends Controller
         }
         $user = User::where("id", $user_id)->first();
         $job = SecurityJob::where("id", $job_id)
-            ->where("job_status", Constants::OPEN)
+            ->where("job_status", Constants::PENDING_ASSIGNMENT)
             ->first();
 
         if ($job) {
