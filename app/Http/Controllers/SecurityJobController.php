@@ -430,6 +430,12 @@ class SecurityJobController extends Controller
         if (!$next_job_status) {
             return ResponseFormatter::errorResponse(StringTemplate::response(5));
         }
+        $check_applied_user = JobAppliedGuard::where('job_id', $job_id)
+            ->where("guard_id",$user_id)
+            ->first();
+        if (!$check_applied_user) {
+            return ResponseFormatter::errorResponse(StringTemplate::response(6));
+        }
         $user = User::where("id", $user_id)->first();
         $job = SecurityJob::where("id", $job_id)
             ->where("job_status", Constants::PENDING_ASSIGNMENT)
@@ -445,8 +451,6 @@ class SecurityJobController extends Controller
                 $job->participant_id = $participant;
             }
 
-            $job->job_status = Constants::UPCOMING;
-            $job->update();
             $job_details = new JobDetail();
             $job_details->job_id = $job->id;
             $job_details->guard_id = $user_id;
@@ -478,6 +482,9 @@ class SecurityJobController extends Controller
                     }
                 }
             }
+
+            $job->job_status = Constants::UPCOMING;
+            $job->update();
 
             (new NotificationController())->addNotifications($job_id, $user_id, $job->user_id, 1, null);
             return ResponseFormatter::successResponse("Job has been updated");

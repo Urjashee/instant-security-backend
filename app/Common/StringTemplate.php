@@ -168,6 +168,9 @@ class StringTemplate
             case (5):
                 return "The job is within 4 hours of the start/end time of another job for the user.";
                 break;
+            case (6):
+                return "The user has not applied for this particular job.";
+                break;
             default:
                 return 'Something went wrong.';
         }
