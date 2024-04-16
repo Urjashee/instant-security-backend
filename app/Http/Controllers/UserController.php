@@ -152,8 +152,9 @@ class UserController extends Controller
     {
         $users = User::where("user_role_id",Constants::MOBILE_USER)
             ->where("profile",1)
+            ->orderBy("created_at", "DESC")
             ->get();
-        $userDetails = UserFunctions::getUser($users);
+        $userDetails = UserFunctions::getUser($users,Constants::MOBILE_USER);
         return ResponseFormatter::successResponse("Users", $userDetails);
     }
 
@@ -161,8 +162,9 @@ class UserController extends Controller
     {
         $users = User::where("user_role_id",Constants::WEB_USER)
             ->where("profile",1)
+            ->orderBy("created_at", "DESC")
             ->get();
-        $userDetails = UserFunctions::getUser($users);
+        $userDetails = UserFunctions::getUser($users,Constants::WEB_USER);
         return ResponseFormatter::successResponse("Users", $userDetails);
     }
 

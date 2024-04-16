@@ -41,6 +41,9 @@ class UserFunctions
         $newUser->password = Hash::make($request->input("password"));
         $newUser->user_role_id = $role_id;
         $newUser->active = 0;
+        if ($role_id == Constants::WEB_USER) {
+            $newUser->profile = 1;
+        }
         $newUser->state_id = $request->input("state");
         $newUser->save();
         $newUser->refresh();
@@ -111,25 +114,45 @@ class UserFunctions
         }
     }
 
-    public static function getUser($users): array
+    public static function getUser($users, $roles): array
     {
         $contentData = [];
-        foreach ($users as $user) {
-            if ($user->active == 0) {
-                if ($user->status == 0)
-                    $active = "Pending";
-                else
-                    $active = "Inactive";
-            } else
-                $active = "Active";
-            $contentData[] = [
-                "user_id" => $user->id,
-                "user_first_name" => $user->first_name,
-                "user_last_name" => $user->last_name,
-                "user_email" => $user->email,
-                "user_status" => $user->status,
-                "is_active" => $active,
-            ];
+        if ($roles == Constants::MOBILE_USER) {
+            foreach ($users as $user) {
+                if ($user->active == 0) {
+                    if ($user->status == 0)
+                        $active = "Pending";
+                    else
+                        $active = "Inactive";
+                } else
+                    $active = "Active";
+                $contentData[] = [
+                    "user_id" => $user->id,
+                    "user_first_name" => $user->first_name,
+                    "user_last_name" => $user->last_name,
+                    "user_email" => $user->email,
+                    "user_status" => $user->status,
+                    "is_active" => $active,
+                ];
+            }
+        } if ($roles == Constants::WEB_USER) {
+            foreach ($users as $user) {
+                if ($user->active == 1) {
+                    if ($user->status == 0)
+                        $active = "Pending";
+                    else
+                        $active = "Inactive";
+                } else
+                    $active = "Active";
+                $contentData[] = [
+                    "user_id" => $user->id,
+                    "user_first_name" => $user->first_name,
+                    "user_last_name" => $user->last_name,
+                    "user_email" => $user->email,
+                    "user_status" => $user->status,
+                    "is_active" => $active,
+                ];
+            }
         }
         return $contentData;
     }
