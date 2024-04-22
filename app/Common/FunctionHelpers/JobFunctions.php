@@ -319,7 +319,7 @@ class JobFunctions
 //                "job_customer_name" => $job->users->first_name . " " . $job->users->last_name,
 //            ];
 //        }
-        if ($role == 2 || $role == 1) {
+        if ($role == 2 || $role == 1 || $role == 3) {
             $job_review = JobReview::where("job_id", $job->id)->first();
             if ($job_review) {
                 $content_data += [
