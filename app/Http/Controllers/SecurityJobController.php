@@ -201,7 +201,9 @@ class SecurityJobController extends Controller
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         } else {
-            $jobs = SecurityJob::where("job_status", $status)->get();
+            $jobs = SecurityJob::where("job_status", $status)
+                ->orderBy("security_jobs.created_at", "DESC")
+                ->get();
         }
         if ($jobs) {
             foreach ($jobs as $job) {
