@@ -175,7 +175,7 @@ class SecurityJobController extends Controller
         }
         if ($jobs) {
             foreach ($jobs as $job) {
-                $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status);
+                $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status, null);
                 $contentData[] = $job_data;
             }
             return ResponseFormatter::successResponse("Jobs", $contentData);
@@ -205,7 +205,7 @@ class SecurityJobController extends Controller
         }
         if ($jobs) {
             foreach ($jobs as $job) {
-                $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status);
+                $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status, null);
                 $contentData[] = $job_data;
             }
             return ResponseFormatter::successResponse("Jobs", $contentData);
@@ -247,7 +247,7 @@ class SecurityJobController extends Controller
                 $job_detail_data = JobFunctions::jobAcceptedDetails($job_details);
                 $jobDetailsData = $job_detail_data;
             }
-            $job_data = JobFunctions::jobDetails($jobs, $request->input(Constants::CURRENT_ROLE_ID_KEY), null);
+            $job_data = JobFunctions::jobDetails($jobs, $request->input(Constants::CURRENT_ROLE_ID_KEY), null, $job_details);
             $contentData = $job_data;
             if ($request->input(Constants::CURRENT_ROLE_ID_KEY) != Constants::MOBILE_USER) {
                 $contentData += [
@@ -545,11 +545,7 @@ class SecurityJobController extends Controller
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
-            $job = SecurityJob::where("id", $job_id)
-                ->where("job_status", Constants::UPCOMING)
-                ->orWhere("job_status", Constants::PENDING)
-                ->orWhere("job_status", Constants::OPEN)
-                ->first();
+            $job = SecurityJob::where("id", $job_id)->first();
             $job_details = JobDetail::where("job_id", $job_id)->first();
             if ($job_details) {
                 if ($job_details->clock_in_request_accepted == Constants::ACCEPTED) {
@@ -570,8 +566,8 @@ class SecurityJobController extends Controller
             $job->chat_sid = null;
             $job->chat_service_sid = null;
             $job->participant_id = null;
-
             $job->update();
+
             try {
                 StripeHelper::deleteInvoiceItem($job->invoice_item_id);
             } catch (\Exception $e) {

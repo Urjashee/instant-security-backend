@@ -143,7 +143,7 @@ class JobFunctions
         }
     }
 
-    public static function jobDetails($job, $role, $status): array
+    public static function jobDetails($job, $role, $status, $job_details): array
     {
         $s3SiteName = Config::get('constants.s3_bucket');
         $customer_profile = CustomerProfile::where("user_id", $job->user_id)->first();
@@ -338,7 +338,23 @@ class JobFunctions
                 "job_price_paid" => $job->price_paid == 0 ? False : True,
             ];
         }
-        if ($role == 4) {
+        if ($role == 2) {
+            $content_data += [
+                "osha_license_id" => $job->osha_license_id == null ? "" : $job->osha_license_id ,
+                "osha_license_name" => $job->osha_license_id == null ? "" : ConfigList::oshaType($job->osha_license_id),
+            ];
+            if ($job_details != null) {
+                $content_data += [
+                    "clock_in_request" => $job_details->clock_in_request == 0 ? FALSE : TRUE,
+                    "clock_in_request_accepted" => $job_details->clock_in_request_accepted == 0 ? FALSE : TRUE,
+                    "clock_in_time" => $job_details->clock_in_time == null ? "" : $job_details->clock_in_time,
+                    "clock_out_request" => $job_details->clock_out_request == 0 ? FALSE : TRUE,
+                    "clock_out_request_accepted" => $job_details->clock_out_request_accepted == 0 ? FALSE : TRUE,
+                    "clock_out_time" => $job_details->clock_out_time == null ? "" : $job_details->clock_out_time,
+                ];
+            }
+        }
+        if ($role == 3) {
             $content_data += [
                 "job_price_paid" => $job->price_paid == 0 ? False : True,
             ];
