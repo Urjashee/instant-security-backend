@@ -87,14 +87,16 @@ class AccountController extends Controller
                         $user->status = 1;
                         $user->profile = 1;
                         $user->update();
-                        try {
-                            $customer = StripeHelper::createCustomer($user->email);
-                        } catch (\Exception $e) {
-                            return ResponseFormatter::errorResponse($e->getMessage());
-                        }
+                        if ($customer_profile->customer_id !== null) {
+                            try {
+                                $customer = StripeHelper::createCustomer($user->email);
+                            } catch (\Exception $e) {
+                                return ResponseFormatter::errorResponse($e->getMessage());
+                            }
 
-                        $customer_profile->customer_id = $customer->id;
-                        $customer_profile->update();
+                            $customer_profile->customer_id = $customer->id;
+                            $customer_profile->update();
+                        }
                         DB::commit();
 //                    return ResponseFormatter::successResponse("User status updated");
                     } catch (\Exception $exception) {
