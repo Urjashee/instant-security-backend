@@ -137,7 +137,7 @@ class UserFunctions
             }
         } if ($roles == Constants::WEB_USER) {
             foreach ($users as $user) {
-                if ($user->active == 1) {
+                if ($user->active == 0) {
                     if ($user->status == 0)
                         $active = "Pending";
                     else

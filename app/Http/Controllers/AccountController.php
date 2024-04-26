@@ -87,7 +87,7 @@ class AccountController extends Controller
                         $user->status = 1;
                         $user->profile = 1;
                         $user->update();
-                        if ($customer_profile->customer_id !== null) {
+                        if ($customer_profile->customer_id == null) {
                             try {
                                 $customer = StripeHelper::createCustomer($user->email);
                             } catch (\Exception $e) {
