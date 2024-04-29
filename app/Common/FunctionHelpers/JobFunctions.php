@@ -156,6 +156,8 @@ class JobFunctions
             "job_roles_and_responsibility" => $job->roles_and_responsibility,
             "job_type_id" => $job->job_type_id,
             "job_type" => $job->job_type->name,
+            "job_osha_license_id" => $job->osha_license_id == null ? "" : $job->osha_license_id,
+            "job_osha_license" => $job->osha_license_id == null ? "" : ConfigList::oshaType($job->osha_license_id),
             "job_state_id" => $job->state_id,
             "job_state" => $job->state->name,
             "job_start_date" => Carbon::createFromTimestamp($job->event_start)->format('Y-m-d\TH:i:s.uP'),
