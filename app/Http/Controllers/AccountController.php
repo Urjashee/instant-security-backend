@@ -70,7 +70,6 @@ class AccountController extends Controller
                 $user->active = 1;
                 $user->status = 1;
                 $user->profile = 0;
-//                TODO separate customer and guard
                 if ($user->user_role_id == 3) {
                     $user_profile->terms_and_condition = 0;
                     $user_profile->update();

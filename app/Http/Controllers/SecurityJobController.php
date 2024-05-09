@@ -154,11 +154,13 @@ class SecurityJobController extends Controller
 
         if ($status == 0) {
             $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-                ->where("job_status", $status)
-                ->orWhere("job_status", Constants::PENDING)
-                ->orWhere("job_status", Constants::REJECTED_JOB)
-                ->orWhere("job_status", Constants::UPCOMING)
-                ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
+                ->where(function($query) use ($status) {
+                    $query->where("job_status", $status)
+                        ->orWhere("job_status", Constants::PENDING)
+                        ->orWhere("job_status", Constants::REJECTED_JOB)
+                        ->orWhere("job_status", Constants::UPCOMING)
+                        ->orWhere("job_status", Constants::PENDING_ASSIGNMENT);
+                })
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         }

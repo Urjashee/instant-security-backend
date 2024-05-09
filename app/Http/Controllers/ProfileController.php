@@ -83,7 +83,7 @@ class ProfileController extends Controller
             return ResponseFormatter::errorResponse("Profile not found");
         }
     }
-
+// TODO upcoming jobs can't update profile
     public function editUserProfile(Request $request): \Illuminate\Http\JsonResponse
     {
         $validator = Validator::make($request->all(), [
