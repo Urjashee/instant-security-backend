@@ -27,6 +27,7 @@ Route::get("/list/config", [\App\Http\Controllers\ListController::class, 'getAll
 //Stripe
 Route::get("/invoice", [\App\Http\Controllers\SecurityJobController::class, 'addInvoice']);
 Route::get("/expire-job", [\App\Http\Controllers\SecurityJobController::class, 'expireJobs']);
+Route::get("/clock-out", [\App\Http\Controllers\SecurityJobController::class, 'autoClockOut']);
 Route::post("/fcm", [\App\Http\Controllers\NotificationController::class, 'sendFcm']);
 
 Route::group(["middleware" => ["jwt.verify"]], function () {

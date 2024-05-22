@@ -8,7 +8,6 @@ use App\Common\StringTemplate;
 use App\Constants;
 use App\Models\DeviceTokens;
 use App\Models\Notification;
-use App\Models\Notifications;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -33,7 +32,10 @@ class NotificationController extends Controller
                     FcmNotification::fcmPushNotification(
                         $token->device_token,
                         StringTemplate::notifications($type),
-                        $message);
+                        $message,
+                        $job_id,
+                        $type
+                    );
                 } catch (\Exception $e) {
                     return ResponseFormatter::errorResponse($e->getMessage());
                 }

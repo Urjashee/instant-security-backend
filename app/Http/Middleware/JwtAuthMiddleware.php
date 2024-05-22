@@ -29,7 +29,7 @@ class JwtAuthMiddleware
         $extra = [];
         if ($token->verify($signer, Config::get("jwt.secret"))) {
             $user = User::where("id", $token->getClaim("user_id"))->first();
-            if (!$user->active) {
+            if (!$user->active && !$user->is_edit) {
                 return ResponseFormatter::forbiddenResponse('User needs to be logged out');
             } else {
                 return $next($request->merge(array_merge([

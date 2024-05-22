@@ -3,10 +3,32 @@
 namespace App\Common\FunctionHelpers;
 
 
+use App\Constants;
+use App\Models\JobDetail;
+use App\Models\SecurityJob;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileFunctions
 {
+    public static function checkEditStatus($user, $type)
+    {
+        if ($type == Constants::MOBILE_USER) {
+            $user = User::where("id", $user)->first();
+            if ($user->is_edit) return true;
+            else return false;
+        }
+    }
+    public static function checkUpcomingJobs($user, $type)
+    {
+        if ($type == Constants::MOBILE_USER) {
+            return SecurityJob::select('security_jobs.*', 'job_details.*')
+                ->join('job_details', 'security_jobs.id', '=', 'job_details.job_id')
+                ->where('job_details.guard_id', $user)
+                ->whereIn('security_jobs.job_status', [1, 4, 8])
+                ->get();
+        }
+    }
     public static function addUpdateProfile($userProfile, $request) {
         if ($request->has('user_profile_image')) {
             $profileImageFileName = time() . '.' . $request->file('user_profile_image')->getClientOriginalExtension();

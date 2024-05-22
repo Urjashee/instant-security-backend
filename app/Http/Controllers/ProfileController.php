@@ -30,6 +30,7 @@ class ProfileController extends Controller
         $state_license = 0;
         $personal_payment = 0;
         $document = 0;
+        $userEdit = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $stateLicense = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $fireLicenses = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
@@ -76,6 +77,7 @@ class ProfileController extends Controller
                 "is_state_license" => $state_license,
                 "is_payment_profile" => $personal_payment,
                 "is_document" => $document,
+                "is_edit" => $userEdit->is_edit,
             ];
 
             return ResponseFormatter::successResponse("Profile Check list", $contentData);
@@ -83,7 +85,7 @@ class ProfileController extends Controller
             return ResponseFormatter::errorResponse("Profile not found");
         }
     }
-// TODO upcoming jobs can't update profile
+
     public function editUserProfile(Request $request): \Illuminate\Http\JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -92,6 +94,10 @@ class ProfileController extends Controller
             "city" => "required",
             "zipcode" => "required",
         ]);
+
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
@@ -146,6 +152,9 @@ class ProfileController extends Controller
         $validator = Validator::make($request->all(), [
             "user_profile_image" => "required",
         ]);
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
@@ -193,6 +202,14 @@ class ProfileController extends Controller
 
     public function editPersonal(Request $request): \Illuminate\Http\JsonResponse
     {
+        $upcoming_jobs = ProfileFunctions::checkUpcomingJobs($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if (sizeof($upcoming_jobs) >= 1)
+            return ResponseFormatter::errorResponse("You have an upcoming job!",);
+
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
+
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
         if ($userProfile) {
@@ -214,6 +231,9 @@ class ProfileController extends Controller
             "cpr_certificate_expiry" => "required"
         ]);
 
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
@@ -275,6 +295,14 @@ class ProfileController extends Controller
         ]);
 
         $fireGuardLicenseList = array();
+
+        $upcoming_jobs = ProfileFunctions::checkUpcomingJobs($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if (sizeof($upcoming_jobs) >= 1)
+            return ResponseFormatter::errorResponse("You have an upcoming job!");
+
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
@@ -352,8 +380,7 @@ class ProfileController extends Controller
                 }
             }
             $stateLicense->update();
-            $user->active = 0;
-            $user->status = 0;
+            $user->is_edit = 0;
             $user->update();
 
             return ResponseFormatter::successResponse("State licenses added");
@@ -361,6 +388,14 @@ class ProfileController extends Controller
     }
 
     public function deleteFireGuardLicense(Request $request, $id): \Illuminate\Http\JsonResponse {
+        $upcoming_jobs = ProfileFunctions::checkUpcomingJobs($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if (sizeof($upcoming_jobs) >= 1)
+            return ResponseFormatter::errorResponse("You have an upcoming job!");
+
+        $check_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($check_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
+
         $auth_user = UserFunctions::authenticateUser($id, $request->input(Constants::CURRENT_USER_ID_KEY));
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
@@ -385,13 +420,9 @@ class ProfileController extends Controller
 
     public function addBanking(Request $request): \Illuminate\Http\JsonResponse
     {
-//        $validator = Validator::make($request->all(), [
-//            "account_number" => "numeric",
-//            "routing" => "required",
-//        ]);
-//
-//        if ($validator->fails())
-//            return ResponseFormatter::errorResponse($validator->errors()->first());
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
 
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
@@ -433,7 +464,7 @@ class ProfileController extends Controller
             $user->update();
             return ResponseFormatter::successResponse("User needs to logout");
         } else {
-            return ResponseFormatter::errorResponse("NO such user found");
+            return ResponseFormatter::errorResponse("No such user found");
         }
     }
 
@@ -461,6 +492,10 @@ class ProfileController extends Controller
             "city" => "required",
             "zipcode" => "numeric",
         ]);
+
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
@@ -527,6 +562,10 @@ class ProfileController extends Controller
 
     public function deleteStateLicense(Request $request, $state_id): \Illuminate\Http\JsonResponse
     {
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
+
         $s3 = Storage::disk('s3');
         $stateLicense = StateLicense::
         where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))

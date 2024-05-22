@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Common\FunctionHelpers\JobFunctions;
 use App\Common\FunctionHelpers\Pagination;
+use App\Common\FunctionHelpers\ProfileFunctions;
 use App\Common\FunctionHelpers\StripeHelper;
 use App\Common\FunctionHelpers\TwillioHelper;
 use App\Common\ResponseFormatter;
@@ -388,6 +389,10 @@ class SecurityJobController extends Controller
 
     public function updateJobStatus(Request $request, $job_id, $status): \Illuminate\Http\JsonResponse
     {
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
+
         $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($status == Constants::ACCEPTED) {
             $auth_user = JobFunctions::checkUserStatus($request->input(Constants::CURRENT_USER_ID_KEY));
@@ -898,24 +903,25 @@ class SecurityJobController extends Controller
             foreach ($job_details as $job_detail) {
                 $jobs = SecurityJob::where("id", $job_detail->job_id)
                     ->where("event_end", "<", time())
+                    ->whereIn('security_jobs.job_status', [1, 4])
                     ->where("additional_hours_accepted", 0)
                     ->first();
                 if ($jobs) {
                     $jobs->job_status = Constants::COMPLETED;
-                    $job_details->clock_out_request = Constants::ACCEPTED;
-                    $job_details->clock_out_request_accepted = Constants::ACCEPTED;
+                    $job_detail->clock_out_request = Constants::ACCEPTED;
+                    $job_detail->clock_out_request_accepted = Constants::ACCEPTED;
                     try {
                         StripeHelper::payInvoices($jobs->invoice_id);
                     } catch (\Exception $e) {
-                        return ResponseFormatter::errorResponse($e->getMessage());
+                        return ResponseFormatter::errorResponse($e->getMessage() . $jobs->id);
                     }
                     $jobs->invoice_paid = Constants::ACCEPTED;
                     $jobs->update();
-                    $job_details->update();
+                    $job_detail->update();
                     $transactions = new Transaction();
                     $transactions->job_id = $job_detail->job_id;
                     $transactions->customer_id = $jobs->user_id;
-                    $transactions->guard_id = $job_details->guard_id;
+                    $transactions->guard_id = $job_detail->guard_id;
                     $transactions->transaction_date = strtotime(Carbon::now()->toDateTimeString());
                     $transactions->amount_to_guard = $jobs->total_price * 0.8;
                     $transactions->amount_to_app = $jobs->total_price * 0.2;

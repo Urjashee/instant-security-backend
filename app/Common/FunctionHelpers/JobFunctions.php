@@ -53,6 +53,7 @@ class JobFunctions
         }
     }
 
+
     public static function checkUserStatus($user_id): bool
     {
         $user = User::where("id", $user_id)->first();

@@ -35,24 +35,37 @@ class LoginController extends Controller
             ->where("user_role_id", 3)
             ->first();
         if ($user) {
-            if ($user->active == 0 && $user->profile == 0 && $user->status == 0)
-                return ResponseFormatter::errorResponse(Constants::USER_EMAIL_NOT_VERIFIED);
+            if (!$user->is_edit) {
+                if ($user->active == 0 && $user->profile == 0 && $user->status == 0)
+                    return ResponseFormatter::errorResponse(Constants::USER_EMAIL_NOT_VERIFIED);
 
-            if ($user->active == 0 && $user->status == 1)
-                return ResponseFormatter::errorResponse(Constants::USER_NOT_ACTIVE);
+                if ($user->active == 0 && $user->status == 1)
+                    return ResponseFormatter::errorResponse(Constants::USER_NOT_ACTIVE);
 
-            if ($user->active == 0 && $user->status == 0 && $user->profile == 1)
-                return ResponseFormatter::errorResponse(Constants::USER_NOT_VERIFIED);
+                if ($user->active == 0 && $user->status == 0 && $user->profile == 1)
+                    return ResponseFormatter::errorResponse(Constants::USER_NOT_VERIFIED);
 
-            if (Hash::check($request->input("password"), $user->password)) {
-                list($token, $refreshToken) = UserFunctions::generateToken($user);
+                if (Hash::check($request->input("password"), $user->password)) {
+                    list($token, $refreshToken) = UserFunctions::generateToken($user);
 
-                $this->deviceToken($user, $request, $token);
+                    $this->deviceToken($user, $request, $token);
 
-                return ResponseFormatter::successResponse("Login successful.",
-                    array("access_token" => (string)$token, "refresh_token" => (string)$refreshToken));
-            } else {
-                return ResponseFormatter::errorResponse('The password entered is incorrect');
+                    return ResponseFormatter::successResponse("Login successful.",
+                        array("access_token" => (string)$token, "refresh_token" => (string)$refreshToken));
+                } else {
+                    return ResponseFormatter::errorResponse('The password entered is incorrect');
+                }
+            } if ($user->is_edit) {
+                if (Hash::check($request->input("password"), $user->password)) {
+                    list($token, $refreshToken) = UserFunctions::generateToken($user);
+
+                    $this->deviceToken($user, $request, $token);
+
+                    return ResponseFormatter::successResponse("Login successful.",
+                        array("access_token" => (string)$token, "refresh_token" => (string)$refreshToken));
+                } else {
+                    return ResponseFormatter::errorResponse('The password entered is incorrect');
+                }
             }
         }
         return ResponseFormatter::errorResponse('The email address entered does not exist or not active');
