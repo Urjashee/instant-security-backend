@@ -211,10 +211,12 @@ class ProfileController extends Controller
             return ResponseFormatter::forbiddenResponse("Forbidden action!");
 
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
 
         if ($userProfile) {
             ProfileFunctions::addUpdateProfile($userProfile, $request);
-
+            $user->is_edit = 0;
+            $user->update();
             return ResponseFormatter::successResponse("Personal info updated");
         } else {
             return ResponseFormatter::errorResponse("No such user profile");
