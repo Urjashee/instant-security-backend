@@ -908,6 +908,8 @@ class SecurityJobController extends Controller
                     ->first();
                 if ($jobs) {
                     $jobs->job_status = Constants::COMPLETED;
+                    $job_detail->clock_in_request = Constants::ACCEPTED;
+                    $job_detail->clock_in_request_accepted = Constants::ACCEPTED;
                     $job_detail->clock_out_request = Constants::ACCEPTED;
                     $job_detail->clock_out_request_accepted = Constants::ACCEPTED;
                     try {
