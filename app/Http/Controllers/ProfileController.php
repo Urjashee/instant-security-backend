@@ -215,7 +215,7 @@ class ProfileController extends Controller
 
         if ($userProfile) {
             ProfileFunctions::addUpdateProfile($userProfile, $request);
-            $user->is_edit = 0;
+            $user->is_edit = 1;
             $user->update();
             return ResponseFormatter::successResponse("Personal info updated");
         } else {
@@ -382,7 +382,7 @@ class ProfileController extends Controller
                 }
             }
             $stateLicense->update();
-            $user->is_edit = 0;
+            $user->is_edit = 1;
             $user->update();
 
             return ResponseFormatter::successResponse("State licenses added");
