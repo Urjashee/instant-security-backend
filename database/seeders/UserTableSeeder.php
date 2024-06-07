@@ -32,6 +32,7 @@ class UserTableSeeder extends Seeder
             "active" => "1",
             "status" => "1",
             "profile" => "1",
+            "is_edit" => "1",
             "user_role_id" => 1,
         ]);
     }

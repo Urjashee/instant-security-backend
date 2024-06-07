@@ -59,7 +59,7 @@ class UserController extends Controller
         if ($user) {
             return ResponseFormatter::errorResponse('User already exists!');
         } else {
-            $user = UserFunctions::addUser($request,3);
+            $user = UserFunctions::addUser($request, 3);
 
             $newUserProfile = new UserProfile();
             $newUserProfile->user_id = $user->id;
@@ -72,7 +72,7 @@ class UserController extends Controller
             $newUserProfile->zipcode = $request->input("zipcode");
             $newUserProfile->save();
 
-            UserFunctions::verifyRequest($request,3);
+            UserFunctions::verifyRequest($request, 3);
             return ResponseFormatter::successResponse("User added!");
         }
     }
@@ -89,7 +89,7 @@ class UserController extends Controller
             "city" => "required",
             "zipcode" => "numeric",
             "password" => "min:8|alpha_num",
-//            "state_id_image" => "required",
+            "state_id_image" => "required",
         ]);
 
         if ($validator->fails())
@@ -100,7 +100,7 @@ class UserController extends Controller
             return ResponseFormatter::errorResponse('User already exists!');
         } else {
 
-            $user = UserFunctions::addUser($request,2);
+            $user = UserFunctions::addUser($request, 2);
 
             $newCustomerProfile = new CustomerProfile();
             $newCustomerProfile->user_id = $user->id;
@@ -112,14 +112,14 @@ class UserController extends Controller
             $newCustomerProfile->zipcode = $request->input("zipcode");
 
             if ($request->has("profile_image") && ($request->file("profile_image")) != null) {
-                $fileNameProfile = time().'.'.$request->file('profile_image')->getClientOriginalExtension();
+                $fileNameProfile = time() . '.' . $request->file('profile_image')->getClientOriginalExtension();
                 $profile_images = $request->file("profile_image");
                 $profile_images->storeAs('web_profile_images', $fileNameProfile, 's3');
                 $newCustomerProfile->profile_image = 'web_profile_images/' . $fileNameProfile;
             }
 
             if ($request->has("state_id_image") && ($request->file("state_id_image")) != null) {
-                $fileNameState = time().'.'.$request->file('state_id_image')->getClientOriginalExtension();
+                $fileNameState = time() . '.' . $request->file('state_id_image')->getClientOriginalExtension();
                 $profile_images = $request->file("state_id_image");
                 $profile_images->storeAs('web_state_id_images', $fileNameState, 's3');
                 $newCustomerProfile->state_id_image = 'web_state_id_images/' . $fileNameState;
@@ -127,7 +127,7 @@ class UserController extends Controller
 
             $newCustomerProfile->save();
 
-            UserFunctions::verifyRequest($request,2);
+            UserFunctions::verifyRequest($request, 2);
             return ResponseFormatter::successResponse("User added!");
         }
     }
@@ -150,21 +150,21 @@ class UserController extends Controller
 
     public function getAllUsers(): \Illuminate\Http\JsonResponse
     {
-        $users = User::where("user_role_id",Constants::MOBILE_USER)
-            ->where("profile",1)
+        $users = User::where("user_role_id", Constants::MOBILE_USER)
+//            ->where("profile", 1)
             ->orderBy("created_at", "DESC")
             ->get();
-        $userDetails = UserFunctions::getUser($users,Constants::MOBILE_USER);
+        $userDetails = UserFunctions::getUser($users, Constants::MOBILE_USER);
         return ResponseFormatter::successResponse("Users", $userDetails);
     }
 
     public function getAllCustomers(): \Illuminate\Http\JsonResponse
     {
-        $users = User::where("user_role_id",Constants::WEB_USER)
-            ->where("profile",1)
+        $users = User::where("user_role_id", Constants::WEB_USER)
+//            ->where("profile", 1)
             ->orderBy("created_at", "DESC")
             ->get();
-        $userDetails = UserFunctions::getUser($users,Constants::WEB_USER);
+        $userDetails = UserFunctions::getUser($users, Constants::WEB_USER);
         return ResponseFormatter::successResponse("Users", $userDetails);
     }
 
@@ -172,7 +172,7 @@ class UserController extends Controller
     {
         $userProfile = UserProfile::where("user_id", $user_id)->first();
         if ($userProfile) {
-            $contentData = UserFunctions::getProfileDetailsUser($user_id,$userProfile);
+            $contentData = UserFunctions::getProfileDetailsUser($user_id, $userProfile);
             return ResponseFormatter::successResponse("User Profile", $contentData);
         } else {
             return ResponseFormatter::errorResponse("Profile not found");
@@ -203,7 +203,8 @@ class UserController extends Controller
         return ResponseFormatter::successResponse("Current user detail found.", $user);
     }
 
-    public function deleteUser(Request $request) {
+    public function deleteUser(Request $request)
+    {
         $user = User::where("id", $request->input(Constants::CURRENT_ROLE_ID_KEY))->first();
         DB::beginTransaction();
 
@@ -215,10 +216,22 @@ class UserController extends Controller
         $user->update();
 
     }
-    public function deactivateUser(Request $request): \Illuminate\Http\JsonResponse
-    {
 
-        return ResponseFormatter::successResponse("User deactivated");
+    public function deactivateUser($user_id): \Illuminate\Http\JsonResponse
+    {
+        $user = User::where("id", $user_id)->first();
+        if ($user->active == 1) {
+            $user->active = 0;
+            $user->is_edit = 0;
+//            $user->update();
+        }
+        else {
+            $user->active = 1;
+            $user->is_edit = 1;
+//            $user->update();
+        }
+        $user->update();
+        return ResponseFormatter::successResponse("User updated");
     }
 }
 

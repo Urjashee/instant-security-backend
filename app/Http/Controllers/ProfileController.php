@@ -86,6 +86,166 @@ class ProfileController extends Controller
         }
     }
 
+    public function addPersonal(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            "govt_id_expiry_date" => "required",
+            "user_govt_id_image" => "required",
+            "user_ssc_image" => "required",
+//            "user_profile_image" => "required"
+        ]);
+
+        if ($validator->fails())
+            return ResponseFormatter::errorResponse($validator->errors()->first());
+
+        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+
+        if ($userProfile) {
+            ProfileFunctions::addUpdateProfile($userProfile, $request);
+
+            return ResponseFormatter::successResponse("Personal info updated");
+        } else {
+            return ResponseFormatter::errorResponse("No such user profile");
+        }
+    }
+
+    public function addStateLicense(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            "state_id" => "required",
+            "security_guard_license_image" => "required",
+            "security_guard_license_expiry" => "required",
+            "cpr_certificate_image" => "required",
+            "cpr_certificate_expiry" => "required"
+        ]);
+
+        if ($validator->fails())
+            return ResponseFormatter::errorResponse($validator->errors()->first());
+
+        if (!State::where("id", $request->input("state_id"))
+            ->where("active", Constants::ACTIVE)->first())
+            return ResponseFormatter::errorResponse("Not an active state");
+
+        $getStateLicense = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+            ->where("state_id", $request->input("state_id"))
+            ->first();
+
+        if ($getStateLicense) {
+            return ResponseFormatter::errorResponse("State licenses already added");
+        } else {
+            $stateLicense = new StateLicense();
+            $stateLicense->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+            $stateLicense->state_id = $request->input("state_id");
+
+            if ($request->has('security_guard_license_image')) {
+                $securityGuardLicenseFileName = time() . '.' . $request->file('security_guard_license_image')->getClientOriginalExtension();
+                $security_guard_license_image = $request->file("security_guard_license_image");
+                $security_guard_license_image->storeAs('security_guard_license_image', $securityGuardLicenseFileName, 's3');
+                $stateLicense->security_guard_license_image = 'security_guard_license_image/' . $securityGuardLicenseFileName;
+            }
+            $stateLicense->security_guard_license_expiry = $request->input("security_guard_license_expiry");
+
+            if ($request->input('fire_guard_license') !== null) {
+                $arrayFireGuard = json_decode($request->input('fire_guard_license'));
+                foreach ($arrayFireGuard as $value) {
+                    $image = ProfileFunctions::convertImage($value);
+                    $fire_guard_license = new FireGuardLicense();
+                    $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
+                    $fire_guard_license->state_id = $request->input("state_id");
+                    $fire_guard_license->fire_guard_license_type = $value->fire_guard_license_type;
+                    $fire_guard_license->fire_guard_license_image = $image;
+                    $fire_guard_license->fire_guard_license_expiry = $value->fire_guard_license_expiry;
+                    $fire_guard_license->save();
+                }
+            }
+
+            if ($request->has('cpr_certificate_image')) {
+                $cprCertificateFileName = time() . '.' . $request->file('cpr_certificate_image')->getClientOriginalExtension();
+                $cpr_certificate_image = $request->file("cpr_certificate_image");
+                $cpr_certificate_image->storeAs('cpr_certificate_image', $cprCertificateFileName, 's3');
+                $stateLicense->cpr_certificate_image = 'cpr_certificate_image/' . $cprCertificateFileName;
+            }
+            $stateLicense->cpr_certificate_expiry = $request->input("cpr_certificate_expiry");
+            $stateLicense->save();
+
+            return ResponseFormatter::successResponse("State licenses added");
+        }
+    }
+
+    public function addBanking(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
+
+        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+
+        if ($userProfile) {
+            $userProfile->account_number = $request->input("account_number");
+            $userProfile->routing = $request->input("routing");
+            $userProfile->update();
+
+            return ResponseFormatter::successResponse("Banking info updated");
+        } else {
+            return ResponseFormatter::errorResponse("No such user profile");
+        }
+    }
+
+    public function addDocument(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+            ->where("terms_and_condition", 1)
+            ->first();
+
+        if (!$userProfile) {
+            $userProfileDocument = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
+                ->first();
+            $userProfileDocument->terms_and_condition = 1;
+            $userProfileDocument->update();
+
+            return ResponseFormatter::successResponse("Terms and Condition added");
+        } else {
+            return ResponseFormatter::errorResponse("Terms and Condition already updated");
+        }
+    }
+
+    public function addSubmit(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+        if ($user) {
+            $user->status = 0;
+            $user->active = 0;
+            $user->profile = 1;
+            $user->update();
+            return ResponseFormatter::successResponse("User needs to logout");
+        } else {
+            return ResponseFormatter::errorResponse("No such user found");
+        }
+    }
+
+    public function editPersonal(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $upcoming_jobs = ProfileFunctions::checkUpcomingJobs($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if (sizeof($upcoming_jobs) >= 1)
+            return ResponseFormatter::errorResponse("You have an upcoming job!",);
+
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        if ($auth_user)
+            return ResponseFormatter::forbiddenResponse("Forbidden action!");
+
+        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+
+        if ($userProfile) {
+            ProfileFunctions::addUpdateProfile($userProfile, $request);
+            $user->is_edit = 0;
+            $user->update();
+            return ResponseFormatter::successResponse("Personal info updated");
+        } else {
+            return ResponseFormatter::errorResponse("No such user profile");
+        }
+    }
+
     public function editUserProfile(Request $request): \Illuminate\Http\JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -174,119 +334,6 @@ class ProfileController extends Controller
             return ResponseFormatter::successResponse("Profile image updated");
         } else {
             return ResponseFormatter::errorResponse("No such user profile");
-        }
-    }
-
-    public function addPersonal(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            "govt_id_expiry_date" => "required",
-            "user_govt_id_image" => "required",
-            "user_ssc_image" => "required",
-//            "user_profile_image" => "required"
-        ]);
-
-        if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors()->first());
-
-        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
-
-        if ($userProfile) {
-            ProfileFunctions::addUpdateProfile($userProfile, $request);
-
-            return ResponseFormatter::successResponse("Personal info updated");
-        } else {
-            return ResponseFormatter::errorResponse("No such user profile");
-        }
-    }
-
-    public function editPersonal(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $upcoming_jobs = ProfileFunctions::checkUpcomingJobs($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
-        if (sizeof($upcoming_jobs) >= 1)
-            return ResponseFormatter::errorResponse("You have an upcoming job!",);
-
-        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
-        if ($auth_user)
-            return ResponseFormatter::forbiddenResponse("Forbidden action!");
-
-        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
-        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
-
-        if ($userProfile) {
-            ProfileFunctions::addUpdateProfile($userProfile, $request);
-            $user->is_edit = 1;
-            $user->update();
-            return ResponseFormatter::successResponse("Personal info updated");
-        } else {
-            return ResponseFormatter::errorResponse("No such user profile");
-        }
-    }
-
-    public function addStateLicense(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            "state_id" => "required",
-            "security_guard_license_image" => "required",
-            "security_guard_license_expiry" => "required",
-            "cpr_certificate_image" => "required",
-            "cpr_certificate_expiry" => "required"
-        ]);
-
-        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
-        if ($auth_user)
-            return ResponseFormatter::forbiddenResponse("Forbidden action!");
-
-        if ($validator->fails())
-            return ResponseFormatter::errorResponse($validator->errors()->first());
-
-        if (!State::where("id", $request->input("state_id"))
-            ->where("active", Constants::ACTIVE)->first())
-            return ResponseFormatter::errorResponse("Not an active state");
-
-        $getStateLicense = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-            ->where("state_id", $request->input("state_id"))
-            ->first();
-
-        if ($getStateLicense) {
-            return ResponseFormatter::errorResponse("State licenses already added");
-        } else {
-            $stateLicense = new StateLicense();
-            $stateLicense->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
-            $stateLicense->state_id = $request->input("state_id");
-
-            if ($request->has('security_guard_license_image')) {
-                $securityGuardLicenseFileName = time() . '.' . $request->file('security_guard_license_image')->getClientOriginalExtension();
-                $security_guard_license_image = $request->file("security_guard_license_image");
-                $security_guard_license_image->storeAs('security_guard_license_image', $securityGuardLicenseFileName, 's3');
-                $stateLicense->security_guard_license_image = 'security_guard_license_image/' . $securityGuardLicenseFileName;
-            }
-            $stateLicense->security_guard_license_expiry = $request->input("security_guard_license_expiry");
-
-            if ($request->input('fire_guard_license') !== null) {
-                $arrayFireGuard = json_decode($request->input('fire_guard_license'));
-                foreach ($arrayFireGuard as $value) {
-                    $image = ProfileFunctions::convertImage($value);
-                    $fire_guard_license = new FireGuardLicense();
-                    $fire_guard_license->user_id = $request->input(Constants::CURRENT_USER_ID_KEY);
-                    $fire_guard_license->state_id = $request->input("state_id");
-                    $fire_guard_license->fire_guard_license_type = $value->fire_guard_license_type;
-                    $fire_guard_license->fire_guard_license_image = $image;
-                    $fire_guard_license->fire_guard_license_expiry = $value->fire_guard_license_expiry;
-                    $fire_guard_license->save();
-                }
-            }
-
-            if ($request->has('cpr_certificate_image')) {
-                $cprCertificateFileName = time() . '.' . $request->file('cpr_certificate_image')->getClientOriginalExtension();
-                $cpr_certificate_image = $request->file("cpr_certificate_image");
-                $cpr_certificate_image->storeAs('cpr_certificate_image', $cprCertificateFileName, 's3');
-                $stateLicense->cpr_certificate_image = 'cpr_certificate_image/' . $cprCertificateFileName;
-            }
-            $stateLicense->cpr_certificate_expiry = $request->input("cpr_certificate_expiry");
-            $stateLicense->save();
-
-            return ResponseFormatter::successResponse("State licenses added");
         }
     }
 
@@ -382,7 +429,7 @@ class ProfileController extends Controller
                 }
             }
             $stateLicense->update();
-            $user->is_edit = 1;
+            $user->is_edit = 0;
             $user->update();
 
             return ResponseFormatter::successResponse("State licenses added");
@@ -420,56 +467,6 @@ class ProfileController extends Controller
         }
     }
 
-    public function addBanking(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
-        if ($auth_user)
-            return ResponseFormatter::forbiddenResponse("Forbidden action!");
-
-        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
-
-        if ($userProfile) {
-            $userProfile->account_number = $request->input("account_number");
-            $userProfile->routing = $request->input("routing");
-            $userProfile->update();
-
-            return ResponseFormatter::successResponse("Banking info updated");
-        } else {
-            return ResponseFormatter::errorResponse("No such user profile");
-        }
-    }
-
-    public function addDocument(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-            ->where("terms_and_condition", 1)
-            ->first();
-
-        if (!$userProfile) {
-            $userProfileDocument = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-                ->first();
-            $userProfileDocument->terms_and_condition = 1;
-            $userProfileDocument->update();
-
-            return ResponseFormatter::successResponse("Terms and Condition added");
-        } else {
-            return ResponseFormatter::errorResponse("Terms and Condition already updated");
-        }
-    }
-    public function addSubmit(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
-        if ($user) {
-            $user->status = 0;
-            $user->active = 0;
-            $user->profile = 1;
-            $user->update();
-            return ResponseFormatter::successResponse("User needs to logout");
-        } else {
-            return ResponseFormatter::errorResponse("No such user found");
-        }
-    }
-
     public function getUserProfile(Request $request): \Illuminate\Http\JsonResponse
     {
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
@@ -495,7 +492,7 @@ class ProfileController extends Controller
             "zipcode" => "numeric",
         ]);
 
-        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
+        $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
         if ($auth_user)
             return ResponseFormatter::forbiddenResponse("Forbidden action!");
 
@@ -540,6 +537,9 @@ class ProfileController extends Controller
                 $customer->state_id_image = 'web_state_id_images/' . $fileNameState;
             }
 
+            $user->profile = 1;
+            $user->active = 0;
+            $user->status = 1;
             $user->update();
             $customer->update();
 

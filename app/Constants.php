@@ -16,6 +16,7 @@ class Constants
     const CURRENT_PROFILE_KEY = "___current_profile_key";
     const CURRENT_FRIENDLY_NAME_KEY = "___current_friendly_name_key";
     const CURRENT_PROFILE_IMAGE_KEY = "___current_profile_image_key";
+    const CURRENT_PROFILE_WEB_STATUS = "___current_profile_web_status";
     const REFRESH_TOKEN_UUID_KEY = "___refresh_token_uuid_key";
     const OPEN = 0;
     const UPCOMING = 1;

@@ -38,7 +38,16 @@ class AccountController extends Controller
                 return ResponseFormatter::errorResponse('User not found!');
             else {
                 if ($user) {
-                    $user->active = 1;
+                    if ($request->input("role_id") == Constants::MOBILE_USER) {
+                        $user->active = 1;
+                        $user->profile = 0;
+                        $user->status = 1;
+                    }
+                    if ($request->input("role_id") == Constants::WEB_USER) {
+                        $user->status = 1;
+                        $user->active = 0;
+                        $user->profile = 1;
+                    }
                     $user->email_verified_at = Carbon::now()->toDateTimeString();
                     $user->update();
                     $tokenData = PasswordReset::where("id", $id)->first();
@@ -85,9 +94,10 @@ class AccountController extends Controller
                     try {
                         DB::beginTransaction();
                         $customer_profile = CustomerProfile::where("user_id", $id)->first();
-                        $user->active = 1;
                         $user->status = 1;
+                        $user->active = 1;
                         $user->profile = 1;
+                        $user->is_edit = 1;
                         $user->update();
                         if ($customer_profile->customer_id == null) {
                             try {
@@ -110,6 +120,7 @@ class AccountController extends Controller
                     $user->active = 1;
                     $user->status = 1;
                     $user->profile = 1;
+                    $user->is_edit = 1;
                     $user->update();
 //                return ResponseFormatter::successResponse("User status updated");
                 }

@@ -42,7 +42,7 @@ class UserFunctions
         $newUser->user_role_id = $role_id;
         $newUser->active = 0;
         if ($role_id == Constants::WEB_USER) {
-            $newUser->profile = 1;
+            $newUser->profile = 0;
         }
         $newUser->state_id = $request->input("state");
         $newUser->save();
@@ -118,14 +118,22 @@ class UserFunctions
     {
         $contentData = [];
         if ($roles == Constants::MOBILE_USER) {
+            $active = "";
             foreach ($users as $user) {
                 if ($user->active == 0) {
                     if ($user->status == 0)
                         $active = "Pending";
                     else
                         $active = "Inactive";
-                } else
-                    $active = "Active";
+                } else {
+                    if (!$user->profile) {
+                        $active = "Inactive";
+                    } else if (!$user->is_edit) {
+                        $active = "Pending";
+                    } else {
+                        $active = "Active";
+                    }
+                }
                 $contentData[] = [
                     "user_id" => $user->id,
                     "user_first_name" => $user->first_name,
@@ -138,12 +146,17 @@ class UserFunctions
         } if ($roles == Constants::WEB_USER) {
             foreach ($users as $user) {
                 if ($user->active == 0) {
-                    if ($user->status == 0)
+                    if ($user->status == 1)
                         $active = "Pending";
                     else
                         $active = "Inactive";
-                } else
-                    $active = "Active";
+                } else {
+                    if (!$user->profile) {
+                        $active = "Inactive";
+                    } else {
+                        $active = "Active";
+                    }
+                }
                 $contentData[] = [
                     "user_id" => $user->id,
                     "user_first_name" => $user->first_name,
@@ -236,6 +249,9 @@ class UserFunctions
             "web_profile_image" => $userProfile->profile_image == null ? "" : $s3SiteName . $userProfile->profile_image,
             "web_state_id_image" => $userProfile->state_id_image == null ? "" : $s3SiteName . $userProfile->state_id_image,
             "web_profile_registered_date" => $userProfile->created_at,
+            "web_active" => $userProfile->user->active,
+            "web_status" => $userProfile->user->status,
+            "web_is_edit" => $userProfile->user->is_edit,
         ];
 
         return $contentData;

@@ -39,100 +39,111 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
     });
 
     Route::group(["middleware" => ["rbac:user"]], function () {
-        Route::group(['prefix' => '/user'], function () {
-            Route::group(['prefix' => '/profile'], function () {
-                Route::get("/", [\App\Http\Controllers\ProfileController::class, 'getUserProfile']);
-                Route::get("/check-list", [\App\Http\Controllers\ProfileController::class, 'filledProfileList']);
-                Route::post("/edit", [\App\Http\Controllers\ProfileController::class, 'editUserProfile']);
-                Route::post("/image", [\App\Http\Controllers\ProfileController::class, 'editProfileImage']);
-                Route::post("/personal-info/add", [\App\Http\Controllers\ProfileController::class, 'addPersonal']);
-                Route::post("/personal-info/edit", [\App\Http\Controllers\ProfileController::class, 'editPersonal']);
-                Route::post("/state-license/add", [\App\Http\Controllers\ProfileController::class, 'addStateLicense']);
-                Route::post("/state-license/edit", [\App\Http\Controllers\ProfileController::class, 'editStateLicense']);
-                Route::put("/bank-information/edit", [\App\Http\Controllers\ProfileController::class, 'addBanking']);
-                Route::patch("/terms-and-condition", [\App\Http\Controllers\ProfileController::class, 'addDocument']);
-                Route::patch("/submit", [\App\Http\Controllers\ProfileController::class, 'addSubmit']);
-                Route::delete("/fire-guard-license/{id}", [\App\Http\Controllers\ProfileController::class, 'deleteFireGuardLicense']);
-                Route::delete("/delete-state-licenses/{id}", [\App\Http\Controllers\ProfileController::class, 'deleteStateLicense']);
-            });
-            Route::group(['prefix' => '/jobs'], function () {
-                Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'selectedJobs']);
-                Route::get("/view/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
-                Route::get("/open", [\App\Http\Controllers\SecurityJobController::class, 'getOpenJobs']);
-                Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobs']);
-                Route::patch("/update/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'updateJobStatus']);
-                Route::patch("/clock-in-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockInRequest']);
-                Route::post("/clock-out-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutRequest']);
-                Route::post("/incident-report/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'addIncidentReport']);
-                Route::post("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'addActivityReport']);
-                Route::get("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'getActivityReport']);
-                Route::post("/response-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'responseMoreTime']);
-            });
-            Route::group(['prefix' => '/faq'], function () {
-                Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
+        Route::group(["middleware" => ["not_active"]], function () {
+            Route::group(['prefix' => '/user'], function () {
+                Route::group(['prefix' => '/profile'], function () {
+                    Route::get("/", [\App\Http\Controllers\ProfileController::class, 'getUserProfile']);
+                    Route::get("/check-list", [\App\Http\Controllers\ProfileController::class, 'filledProfileList']);
+                    Route::post("/edit", [\App\Http\Controllers\ProfileController::class, 'editUserProfile']);
+                    Route::post("/image", [\App\Http\Controllers\ProfileController::class, 'editProfileImage']);
+                    Route::post("/personal-info/add", [\App\Http\Controllers\ProfileController::class, 'addPersonal']);
+                    Route::post("/personal-info/edit", [\App\Http\Controllers\ProfileController::class, 'editPersonal']);
+                    Route::post("/state-license/add", [\App\Http\Controllers\ProfileController::class, 'addStateLicense']);
+                    Route::post("/state-license/edit", [\App\Http\Controllers\ProfileController::class, 'editStateLicense']);
+                    Route::put("/bank-information/edit", [\App\Http\Controllers\ProfileController::class, 'addBanking']);
+                    Route::patch("/terms-and-condition", [\App\Http\Controllers\ProfileController::class, 'addDocument']);
+                    Route::patch("/submit", [\App\Http\Controllers\ProfileController::class, 'addSubmit']);
+                    Route::delete("/fire-guard-license/{id}", [\App\Http\Controllers\ProfileController::class, 'deleteFireGuardLicense']);
+                    Route::delete("/delete-state-licenses/{id}", [\App\Http\Controllers\ProfileController::class, 'deleteStateLicense']);
+                });
+                Route::group(['prefix' => '/jobs'], function () {
+                    Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'selectedJobs']);
+                    Route::get("/view/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
+                    Route::get("/open", [\App\Http\Controllers\SecurityJobController::class, 'getOpenJobs']);
+                    Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobs']);
+                    Route::patch("/update/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'updateJobStatus']);
+                    Route::patch("/clock-in-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockInRequest']);
+                    Route::post("/clock-out-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutRequest']);
+                    Route::post("/incident-report/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'addIncidentReport']);
+                    Route::post("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'addActivityReport']);
+                    Route::get("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'getActivityReport']);
+                    Route::post("/response-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'responseMoreTime']);
+                });
+                Route::group(['prefix' => '/faq'], function () {
+                    Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
+                });
             });
         });
     });
+
     Route::group(["middleware" => ["rbac:customer,user"]], function () {
-        Route::get("/chat/token/{job_id}", [\App\Http\Controllers\ChatController::class, 'getToken']);
+        Route::group(["middleware" => ["not_active"]], function () {
+            Route::get("/chat/token/{job_id}", [\App\Http\Controllers\ChatController::class, 'getToken']);
+        });
     });
     Route::group(["middleware" => ["rbac:customer,super_admin"]], function () {
         Route::group(['prefix' => '/web'], function () {
-            Route::post("/profile/edit", [\App\Http\Controllers\ProfileController::class, 'editCustomerProfile']);
             Route::get("/profile", [\App\Http\Controllers\ProfileController::class, 'getCustomerProfile']);
-            Route::group(['prefix' => '/jobs'], function () {
-                Route::post("/", [\App\Http\Controllers\SecurityJobController::class, 'addJobs']);
-                Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'getJobs']);
-                Route::get("/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
-                Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobsCreated']);
-                Route::patch("/clock-in-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockInResponse']);
-                Route::patch("/clock-out-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
-                Route::post("/request-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'requestMoreTime']);
-            });
-            Route::get("/job-type", [\App\Http\Controllers\JobTypeController::class, 'getAllJobTypes']);
-            Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
-            Route::group(['prefix' => '/payment'], function () {
-                Route::get("/ephemeral-key", [\App\Http\Controllers\PaymentController::class, 'getEphemeralKey']);
-            });
-            Route::group(['prefix' => '/card'], function () {
-                Route::get("/list", [\App\Http\Controllers\PaymentController::class, 'getUserCard']);
-                Route::delete("/delete/{card_id}", [\App\Http\Controllers\PaymentController::class, 'deleteCard']);
-            });
+        });
+        Route::group(["middleware" => ["not_active"]], function () {
+            Route::group(['prefix' => '/web'], function () {
+                Route::post("/profile/edit", [\App\Http\Controllers\ProfileController::class, 'editCustomerProfile']);
+                Route::group(['prefix' => '/jobs'], function () {
+                    Route::post("/", [\App\Http\Controllers\SecurityJobController::class, 'addJobs']);
+                    Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'getJobs']);
+                    Route::get("/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
+                    Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobsCreated']);
+                    Route::patch("/clock-in-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockInResponse']);
+                    Route::patch("/clock-out-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
+                    Route::post("/request-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'requestMoreTime']);
+                });
+                Route::get("/job-type", [\App\Http\Controllers\JobTypeController::class, 'getAllJobTypes']);
+                Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
+                Route::group(['prefix' => '/payment'], function () {
+                    Route::get("/ephemeral-key", [\App\Http\Controllers\PaymentController::class, 'getEphemeralKey']);
+                });
+                Route::group(['prefix' => '/card'], function () {
+                    Route::get("/list", [\App\Http\Controllers\PaymentController::class, 'getUserCard']);
+                    Route::delete("/delete/{card_id}", [\App\Http\Controllers\PaymentController::class, 'deleteCard']);
+                });
 
-            Route::post("/review", [\App\Http\Controllers\SecurityJobController::class, 'addJobReview']);
-            Route::group(['prefix' => '/faq'], function () {
-                Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
-            });
-            Route::group(['prefix' => '/notifications'], function () {
-                Route::get("/", [\App\Http\Controllers\NotificationController::class, 'getNotifications']);
-                Route::get("/count", [\App\Http\Controllers\NotificationController::class, 'countNotifications']);
-                Route::patch("/read/{id}", [\App\Http\Controllers\NotificationController::class, 'readNotifications']);
+                Route::post("/review", [\App\Http\Controllers\SecurityJobController::class, 'addJobReview']);
+                Route::group(['prefix' => '/faq'], function () {
+                    Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
+                });
+                Route::group(['prefix' => '/notifications'], function () {
+                    Route::get("/", [\App\Http\Controllers\NotificationController::class, 'getNotifications']);
+                    Route::get("/count", [\App\Http\Controllers\NotificationController::class, 'countNotifications']);
+                    Route::patch("/read/{id}", [\App\Http\Controllers\NotificationController::class, 'readNotifications']);
+                });
             });
         });
     });
 
     Route::group(["middleware" => ["rbac:super_admin"]], function () {
-        Route::group(['prefix' => '/admin'], function () {
-            Route::get("/guards", [\App\Http\Controllers\UserController::class, 'getAllUsers']);
-            Route::get("/guards/{id}", [\App\Http\Controllers\UserController::class, 'getUserDetails']);
-            Route::get("/customers", [\App\Http\Controllers\UserController::class, 'getAllCustomers']);
-            Route::get("/customers/{id}", [\App\Http\Controllers\UserController::class, 'getCustomerDetails']);
-            Route::post("/deactivate-user", [\App\Http\Controllers\UserController::class, 'deactivateUser']);
-            Route::patch("/account-status/{user_id}", [\App\Http\Controllers\AccountController::class, 'updateAccountStatus']);
-            Route::post("/job-type", [\App\Http\Controllers\JobTypeController::class, 'addJobType']);
-            Route::patch("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'editJobType']);
+        Route::group(["middleware" => ["not_active"]], function () {
+            Route::group(['prefix' => '/admin'], function () {
+                Route::get("/guards", [\App\Http\Controllers\UserController::class, 'getAllUsers']);
+                Route::get("/guards/{id}", [\App\Http\Controllers\UserController::class, 'getUserDetails']);
+                Route::get("/customers", [\App\Http\Controllers\UserController::class, 'getAllCustomers']);
+                Route::get("/customers/{id}", [\App\Http\Controllers\UserController::class, 'getCustomerDetails']);
+                Route::post("/deactivate-user/{user_id}", [\App\Http\Controllers\UserController::class, 'deactivateUser']);
+                Route::patch("/account-status/{user_id}", [\App\Http\Controllers\AccountController::class, 'updateAccountStatus']);
+                Route::post("/job-type", [\App\Http\Controllers\JobTypeController::class, 'addJobType']);
+                Route::patch("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'editJobType']);
 
-            Route::patch("/state/{id}", [\App\Http\Controllers\StateController::class, 'changeStateStatus']);
-            Route::get("/transactions", [\App\Http\Controllers\SecurityJobController::class, 'transactions']);
+                Route::patch("/state/{id}", [\App\Http\Controllers\StateController::class, 'changeStateStatus']);
+                Route::get("/transactions", [\App\Http\Controllers\SecurityJobController::class, 'transactions']);
 
-            Route::patch("/review-job/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'reviewJob']);
-            Route::patch("/assign-job/{job_id}/{user_id}", [\App\Http\Controllers\SecurityJobController::class, 'assignJob']);
-            Route::get("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'getAllJobs']);
-            Route::get("/jobs/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
-            Route::group(['prefix' => '/faq'], function () {
-                Route::post("/", [\App\Http\Controllers\FaqController::class, 'addFaqs']);
-                Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
-                Route::patch("/{id}", [\App\Http\Controllers\FaqController::class, 'updateFaqs']);
+                Route::patch("/review-job/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'reviewJob']);
+                Route::patch("/assign-job/{job_id}/{user_id}", [\App\Http\Controllers\SecurityJobController::class, 'assignJob']);
+                Route::get("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'getAllJobs']);
+                Route::get("/jobs/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
+                Route::group(['prefix' => '/faq'], function () {
+                    Route::post("/", [\App\Http\Controllers\FaqController::class, 'addFaqs']);
+                    Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
+                    Route::patch("/{id}", [\App\Http\Controllers\FaqController::class, 'updateFaqs']);
+                });
             });
         });
     });

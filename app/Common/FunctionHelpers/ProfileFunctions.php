@@ -15,7 +15,7 @@ class ProfileFunctions
     {
         if ($type == Constants::MOBILE_USER) {
             $user = User::where("id", $user)->first();
-            if ($user->is_edit) return true;
+            if (!$user->is_edit) return true;
             else return false;
         }
     }
