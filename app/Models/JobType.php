@@ -14,4 +14,9 @@ use Illuminate\Database\Eloquent\Model;
 class JobType extends Model
 {
     use HasFactory;
+    protected $with = ["state"];
+    public function state()
+    {
+        return $this->belongsTo(State::class, "state_id");
+    }
 }
