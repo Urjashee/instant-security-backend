@@ -193,7 +193,7 @@ class SecurityJobController extends Controller
         $status = $request->query("status");
 
         if ($status == 6) {
-            $jobs = SecurityJob::where("job_status", Constants::PENDING)->orWhere("job_status", Constants::REJECTED_JOB)
+            $jobs = SecurityJob::whereIn("job_status", [6,7])
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         }

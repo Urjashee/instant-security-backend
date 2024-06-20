@@ -210,9 +210,11 @@ class JobFunctions
                     $assigned_job_all = true;
                     $guards_data = array();
                     foreach ($applied_jobs as $applied_job) {
+                        $user_profile = UserProfile::where("user_id",$applied_job->guard_id)->first();
                         $guards_data[] = [
                             "guard_id" => $applied_job->guard_id,
-                            "guard_name" => $applied_job->user->first_name . " " . $applied_job->user->last_name
+                            "guard_name" => $applied_job->user->first_name . " " . $applied_job->user->last_name,
+                            "guard_image" => $user_profile->profile_image == null ? "" : $s3SiteName . $user_profile->profile_image
                         ];
                     }
                     $content_data += [
@@ -415,9 +417,12 @@ class JobFunctions
 
     public static function jobAcceptedDetails($job_detail): array
     {
+        $s3SiteName = Config::get('constants.s3_bucket');
+        $user_profile = UserProfile::where("user_id", $job_detail->guard_id)->first();
         return [
             "security_guard_id" => $job_detail->guard_id,
             "security_guard_name" => $job_detail->users->first_name . " " . $job_detail->users->last_name,
+            "security_guard_image" => $user_profile->profile_image == null ? "" : $s3SiteName . $user_profile->profile_image,
             "clock_in_request" => $job_detail->clock_in_request == 0 ? FALSE : TRUE,
             "clock_in_request_accepted" => $job_detail->clock_in_request_accepted == 0 ? FALSE : TRUE,
             "clock_out_request" => $job_detail->clock_out_request == 0 ? FALSE : TRUE,

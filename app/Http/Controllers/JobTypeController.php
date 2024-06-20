@@ -67,7 +67,8 @@ class JobTypeController extends Controller
 
     public function getAllJobTypes(Request $request): \Illuminate\Http\JsonResponse
     {
-        $job_types = JobType::all();
+        $job_types = JobType::orderBy("name","ASC")
+            ->get();
 
         if ($job_types) {
             return ResponseFormatter::successResponse("Job types", $job_types);

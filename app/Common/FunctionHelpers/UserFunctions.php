@@ -226,6 +226,9 @@ class UserFunctions
             "user_bank_name" => $userProfile->bank_name,
             "user_terms_and_condition" => $userProfile->terms_and_condition,
             "state_license" => $license,
+            "user_active" => $userProfile->user->active,
+            "user_status" => $userProfile->user->status,
+            "user_is_edit" => $userProfile->user->is_edit,
         ];
         return $contentData;
     }
