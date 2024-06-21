@@ -82,7 +82,7 @@ class UserFunctions
 
     public static function verifyRequest($request, $role_id)
     {
-        $siteName = Config::get('constants.url');
+        $siteName = Config::get('constants.web_url');
 
         $token = Str::random(64);
         $newPassword = new PasswordReset();
@@ -249,6 +249,7 @@ class UserFunctions
             "web_state" => $userProfile->user->state_id,
             "web_city" => $userProfile->city,
             "web_zipcode" => $userProfile->zipcode,
+            "web_customer_card_details" => $userProfile->card_details,
             "web_customer_id" => $userProfile->customer_id,
             "web_profile_image" => $userProfile->profile_image == null ? "" : $s3SiteName . $userProfile->profile_image,
             "web_state_id_image" => $userProfile->state_id_image == null ? "" : $s3SiteName . $userProfile->state_id_image,

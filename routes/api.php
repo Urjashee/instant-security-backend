@@ -105,6 +105,7 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                 Route::group(['prefix' => '/card'], function () {
                     Route::get("/list", [\App\Http\Controllers\PaymentController::class, 'getUserCard']);
                     Route::delete("/delete/{card_id}", [\App\Http\Controllers\PaymentController::class, 'deleteCard']);
+                    Route::post("/save-payment-method", [\App\Http\Controllers\PaymentController::class, 'savePaymentMethod']);
                 });
 
                 Route::post("/review", [\App\Http\Controllers\SecurityJobController::class, 'addJobReview']);

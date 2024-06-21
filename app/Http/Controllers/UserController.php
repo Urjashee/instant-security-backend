@@ -151,7 +151,7 @@ class UserController extends Controller
     public function getAllUsers(): \Illuminate\Http\JsonResponse
     {
         $users = User::where("user_role_id", Constants::MOBILE_USER)
-//            ->where("profile", 1)
+            ->where("email_verified_at", "!=", null)
             ->orderBy("created_at", "DESC")
             ->get();
         $userDetails = UserFunctions::getUser($users, Constants::MOBILE_USER);
@@ -161,7 +161,7 @@ class UserController extends Controller
     public function getAllCustomers(): \Illuminate\Http\JsonResponse
     {
         $users = User::where("user_role_id", Constants::WEB_USER)
-//            ->where("profile", 1)
+            ->where("email_verified_at", "!=", null)
             ->orderBy("created_at", "DESC")
             ->get();
         $userDetails = UserFunctions::getUser($users, Constants::WEB_USER);

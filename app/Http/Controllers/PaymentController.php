@@ -62,4 +62,28 @@ class PaymentController extends Controller
         }
     }
 
+    public function savePaymentMethod(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            "payment_method_id" => "required",
+        ]);
+
+        if ($validator->fails())
+            return ResponseFormatter::errorResponse($validator->errors()->first());
+
+        $customer_profile = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+        if ($customer_profile) {
+            $attach_payment = StripeHelper::attachPayment($customer_profile->customer_id, $request->input("payment_method_id"));
+            if ($attach_payment) {
+                $customer_profile->card_details = 1;
+                $customer_profile->update();
+                return ResponseFormatter::successResponse("Payment Method added");
+            } else {
+                return ResponseFormatter::errorResponse("Payment method not added");
+            }
+        } else {
+            return ResponseFormatter::errorResponse("No such user", $request->input(Constants::CURRENT_USER_ID_KEY));
+        }
+    }
+
 }
