@@ -197,13 +197,29 @@ class SecurityJobController extends Controller
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         }
-        if ($status == 0) {
+        else if ($status == 0) {
             $jobs = SecurityJob::where("job_status", Constants::OPEN)
                 ->orWhere("job_status", Constants::UPCOMING)
                 ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
-        } else {
+        }
+        else if ($status == 2) {
+            $jobs = SecurityJob::where("job_status", Constants::COMPLETED)
+                ->orderBy("security_jobs.created_at", "DESC")
+                ->get();
+        }
+        else if ($status == 3) {
+            $jobs = SecurityJob::where("job_status", Constants::CANCELLED)
+                ->orderBy("security_jobs.created_at", "DESC")
+                ->get();
+        }
+        else if ($status == 1) {
+            $jobs = SecurityJob::where("job_status", Constants::UPCOMING)
+                ->orderBy("security_jobs.created_at", "DESC")
+                ->get();
+        }
+        else {
             $jobs = SecurityJob::where("job_status", $status)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();

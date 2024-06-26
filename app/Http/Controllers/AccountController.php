@@ -42,6 +42,7 @@ class AccountController extends Controller
                         $user->active = 1;
                         $user->profile = 0;
                         $user->status = 1;
+                        $user->is_edit = 1;
                     }
                     if ($request->input("role_id") == Constants::WEB_USER) {
                         $user->status = 1;

@@ -22,7 +22,7 @@ class UserTableSeeder extends Seeder
         $states = State::where("active", 1)->pluck('id')->toArray();
         $state_id = $faker->randomElement($states);
         DB::table("users")->insert([
-            "email" => "urja+4@simpalm.com",
+            "email" => "urja+1@simpalm.com",
             "email_verified_at" => "2022-12-03 14:24:04",
             "password" => Hash::make("Goblin123"),
             "first_name" => "Super",
