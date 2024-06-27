@@ -18,6 +18,7 @@ class ListController extends Controller
         $oshaList = array();
         $dayList = array();
         $jobList = array();
+        $notificationList = array();
         $states = State::where("active",1)->get();
         $fireArms = Firearms::all();
         if ($states) {
@@ -55,12 +56,20 @@ class ListController extends Controller
                 'name' => ConfigList::jobType($jobs),
             ];
         }
+        for ($notification = 1; $notification <= 10; $notification++) {
+            $notificationList[] = [
+                'id' => $notification,
+                'name' => ConfigList::notificationType($notification),
+                'message' => ConfigList::notificationType($notification),
+            ];
+        }
         $allList = [
             'states' => $stateList,
             'fire_arms' => $fireArmsList,
             'osha' => $oshaList,
             'day_of_week' => $dayList,
             'job_status' => $jobList,
+            'notifications' => $notificationList,
         ];
         return ResponseFormatter::successResponse("", $allList);
     }

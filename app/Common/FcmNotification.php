@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 
 class FcmNotification{
-    public static function fcmPushNotification($firebaseToken, $title, $body): string
+    public static function fcmPushNotification($firebaseToken, $title, $body, $job_id, $type): string
     {
         //$SERVER_API_KEY = env('FCM_SERVER_KEY');
 
@@ -16,6 +16,8 @@ class FcmNotification{
             "notification" => [
                 "title" => $title,
                 "body" => $body,
+                "job_id" => $job_id,
+                "notification_type" => $type,
             ]
         ];
         $dataString = json_encode($data);

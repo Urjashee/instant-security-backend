@@ -155,7 +155,7 @@ class SecurityJobController extends Controller
 
         if ($status == 0) {
             $jobs = SecurityJob::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
-                ->where(function($query) use ($status) {
+                ->where(function ($query) use ($status) {
                     $query->where("job_status", $status)
                         ->orWhere("job_status", Constants::PENDING)
                         ->orWhere("job_status", Constants::REJECTED_JOB)
@@ -193,33 +193,29 @@ class SecurityJobController extends Controller
         $status = $request->query("status");
 
         if ($status == 6) {
-            $jobs = SecurityJob::whereIn("job_status", [6,7])
+            $jobs = SecurityJob::whereIn("job_status", [Constants::PENDING, Constants::REJECTED_JOB])
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
-        }
-        else if ($status == 0) {
-            $jobs = SecurityJob::where("job_status", Constants::OPEN)
-                ->orWhere("job_status", Constants::UPCOMING)
-                ->orWhere("job_status", Constants::PENDING_ASSIGNMENT)
-                ->orderBy("security_jobs.created_at", "DESC")
-                ->get();
-        }
-        else if ($status == 2) {
-            $jobs = SecurityJob::where("job_status", Constants::COMPLETED)
-                ->orderBy("security_jobs.created_at", "DESC")
-                ->get();
-        }
-        else if ($status == 3) {
-            $jobs = SecurityJob::where("job_status", Constants::CANCELLED)
-                ->orderBy("security_jobs.created_at", "DESC")
-                ->get();
-        }
-        else if ($status == 1) {
+        } else if ($status == 0) {
+
+//            $jobs = SecurityJob::whereIn("job_status", [Constants::OPEN,
+//                Constants::PENDING_ASSIGNMENT])
+//                ->orderBy("security_jobs.created_at", "DESC")
+//                ->get();
+
+        } else if ($status == 1) {
             $jobs = SecurityJob::where("job_status", Constants::UPCOMING)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
-        }
-        else {
+        } else if ($status == 2) {
+            $jobs = SecurityJob::where("job_status", Constants::COMPLETED)
+                ->orderBy("security_jobs.created_at", "DESC")
+                ->get();
+        } else if ($status == 3) {
+            $jobs = SecurityJob::where("job_status", Constants::CANCELLED)
+                ->orderBy("security_jobs.created_at", "DESC")
+                ->get();
+        } else {
             $jobs = SecurityJob::where("job_status", $status)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
@@ -358,7 +354,7 @@ class SecurityJobController extends Controller
             $jobs = DB::table("security_jobs")
                 ->leftJoin("job_details", "security_jobs.id", "=", "job_details.job_id")
                 ->leftJoin("job_applied_guards", "security_jobs.id", "=", "job_applied_guards.job_id")
-                ->select("security_jobs.*","security_jobs.id as security_id","job_details.*","job_applied_guards.*")
+                ->select("security_jobs.*", "security_jobs.id as security_id", "job_details.*", "job_applied_guards.*")
                 ->where("security_jobs.job_status", Constants::UPCOMING)
                 ->where("security_jobs.job_status", Constants::PENDING_ASSIGNMENT)
                 ->where("job_details.guard_id", $request->input(Constants::CURRENT_USER_ID_KEY))
@@ -397,8 +393,7 @@ class SecurityJobController extends Controller
             } else {
                 return ResponseFormatter::errorResponse("No job records");
             }
-        }
-        else {
+        } else {
             return ResponseFormatter::errorResponse("No job records");
         }
     }
@@ -456,7 +451,7 @@ class SecurityJobController extends Controller
             return ResponseFormatter::errorResponse(StringTemplate::response(5));
         }
         $check_applied_user = JobAppliedGuard::where('job_id', $job_id)
-            ->where("guard_id",$user_id)
+            ->where("guard_id", $user_id)
             ->first();
         if (!$check_applied_user) {
             return ResponseFormatter::errorResponse(StringTemplate::response(6));

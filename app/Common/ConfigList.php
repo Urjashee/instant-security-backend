@@ -119,4 +119,41 @@ class ConfigList {
                 return 'Something went wrong.';
         }
     }
+    public static function notificationType($type): string
+    {
+        switch($type) {
+            case(1):
+                return "Assign Job";
+                break;
+            case(2):
+                return "Cancel Job";
+                break;
+            case(3):
+                return "Clock-in Request";
+                break;
+            case(4):
+                return "Clock-out Request";
+                break;
+            case(5):
+                return "Extra time request";
+                break;
+            case(6):
+                return "Extra time Accepted";
+                break;
+            case(7):
+                return "Extra time Rejected";
+                break;
+            case(8):
+                return "--";
+                break;
+            case(9):
+                return "Job Accepted";
+                break;
+            case(10):
+                return "Job Rejected";
+                break;
+            default:
+                return 'Something went wrong.';
+        }
+    }
 }

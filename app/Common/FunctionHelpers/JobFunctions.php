@@ -179,11 +179,11 @@ class JobFunctions
         if ($status == 0) {
             $assigned_job_true = false;
             $assigned_job_all = false;
+            $job_detail = JobDetail::where("job_id", $job->id)->first();
             if ($role == 2 && ($job->job_status == Constants::OPEN ||
                     $job->job_status == Constants::UPCOMING ||
                     $job->job_status == Constants::REJECTED_JOB ||
-                    $job->job_status == Constants::PENDING_ASSIGNMENT ||
-                    $job->job_status == Constants::PENDING)) {
+                    $job->job_status == Constants::PENDING_ASSIGNMENT)) {
                 if ($job->job_status == Constants::OPEN ||
                     $job->job_status == Constants::PENDING_ASSIGNMENT) {
                     $content_data += [
