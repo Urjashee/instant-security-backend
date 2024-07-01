@@ -35,7 +35,7 @@ class LoginController extends Controller
             ->where("user_role_id", 3)
             ->first();
         if ($user) {
-            if ($user->is_edit == 1) {
+            if ($user->is_edit == 0) {
                 if ($user->active == 0 && $user->profile == 0 && $user->status == 0)
                     return ResponseFormatter::errorResponse(Constants::USER_EMAIL_NOT_VERIFIED);
 
