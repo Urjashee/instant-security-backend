@@ -23,6 +23,7 @@ use App\Models\UserProfile;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use PHPUnit\TextUI\XmlConfiguration\Constant;
+use function Composer\Autoload\includeFile;
 
 class JobFunctions
 {
@@ -405,6 +406,129 @@ class JobFunctions
         }
 
         return $content_data;
+    }
+    public static function jobDetailsAdmin($job, $role, $status, $job_details): array
+    {
+        $s3SiteName = Config::get('constants.s3_bucket');
+        $customer_profile = CustomerProfile::where("user_id", $job->user_id)->first();
+        $activity_logs_data = array();
+        $incident_report_data = array();
+        $content_data = [
+            "job_id" => $job->id,
+            "job_event_name" => $job->event_name,
+            "job_description" => $job->job_description,
+            "job_roles_and_responsibility" => $job->roles_and_responsibility,
+            "job_type_id" => $job->job_type_id,
+            "job_type" => $job->job_type->name,
+            "job_osha_license_id" => $job->osha_license_id == null ? "" : $job->osha_license_id,
+            "job_osha_license" => $job->osha_license_id == null ? "" : ConfigList::oshaType($job->osha_license_id),
+            "job_state_id" => $job->state_id,
+            "job_state" => $job->state->name,
+            "job_start_date" => Carbon::createFromTimestamp($job->event_start)->format('Y-m-d\TH:i:s.uP'),
+            "job_price" => $job->price,
+            "job_max_price" => $job->max_price,
+            "job_start_time" => Carbon::createFromTimestamp($job->event_start)->format('Y-m-d\TH:i:s.uP'),
+            "job_end_time" => Carbon::createFromTimestamp($job->event_end)->format('Y-m-d\TH:i:s.uP'),
+            "job_address" => $job->street1 . ", " . $job->street2 . ", " . $job->city . ", " . $job->state->name . ", " . $job->zipcode,
+            "additional_hour_request" => !($job->additional_hour_request == 0),
+            "additional_hours" => $job->additional_hours == null ? 0 : $job->additional_hours,
+            "additional_hours_accepted" => !($job->additional_hours_accepted == 0),
+            "job_posted_by_id" => $job->user_id,
+            "job_posted_by_name" => $job->users->first_name . " " . $job->users->last_name,
+            "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
+            "job_chat_id" => $job->chat_sid == null ? "" : $job->chat_sid,
+        ];
+        $job_details = JobDetail::where("job_id", $job->id)->first();
+        if ($status == 0) {
+            if ($job_details) {
+                if ($job_details->clock_in_request) {
+                    return [];
+                }
+            }
+            $assigned_job_true = false;
+            $assigned_job_all = false;
+
+            if ($job->job_status == 0 || $job->job_status == 1 || $job->job_status == 8) {
+                $applied_jobs = JobAppliedGuard::where('job_id', $job->id)
+                    ->where('assigned', Constants::INACTIVE)
+                    ->get();
+                $applied_jobs_active = JobAppliedGuard::where('job_id', $job->id)
+                    ->where('assigned', Constants::ACTIVE)
+                    ->first();
+                if ($applied_jobs_active) {
+                    $assigned_job_true = true;
+                }
+                if ($applied_jobs) {
+                    $assigned_job_all = true;
+                    $guards_data = array();
+                    foreach ($applied_jobs as $applied_job) {
+                        $user_profile = UserProfile::where("user_id",$applied_job->guard_id)->first();
+                        $guards_data[] = [
+                            "guard_id" => $applied_job->guard_id,
+                            "guard_name" => $applied_job->user->first_name . " " . $applied_job->user->last_name,
+                            "guard_image" => $user_profile->profile_image == null ? "" : $s3SiteName . $user_profile->profile_image
+                        ];
+                    }
+                    $content_data += [
+                        "applied_guards" => $guards_data,
+                    ];
+                }
+                if ($assigned_job_true && $assigned_job_all) {
+                    $content_data += [
+                        "job_status_id" => 9,
+                        "job_status_name" => ConfigList::jobType(9),
+                    ];
+                }
+                if (!$assigned_job_true && $assigned_job_all) {
+                    $content_data += [
+                        "job_status_id" => 8,
+                        "job_status_name" => ConfigList::jobType(8),
+                    ];
+                }
+                if (!$assigned_job_true && !$assigned_job_all) {
+                    $content_data += [
+                        "job_status_id" => $job->job_status,
+                        "job_status_name" => ConfigList::jobType($job->job_status),
+                    ];
+                }
+
+            }
+            return $content_data;
+        }
+        if ($status == 1) {
+
+        }
+        if ($status == 2) {
+
+        }
+        if ($status == 3) {
+
+        }
+        if ($status == 6) {
+            if ($job->job_status == Constants::PENDING)
+                $content_data += [
+                    "job_status_id" => Constants::PENDING,
+                    "job_status_name" => ConfigList::jobType(Constants::PENDING),
+                ];
+            if ($job->job_status == Constants::REJECTED_JOB)
+                $content_data += [
+                    "job_status_id" => Constants::REJECTED_JOB,
+                    "job_status_name" => ConfigList::jobType(Constants::REJECTED_JOB),
+                ];
+            return $content_data;
+        }
+    }
+
+    public static function removeEmptyArrays(array $array): array {
+        foreach ($array as $key => &$value) {
+            if (is_array($value)) {
+                $value = JobFunctions::removeEmptyArrays($value);
+                if (empty($value)) {
+                    unset($array[$key]);
+                }
+            }
+        }
+        return $array;
     }
 
     public static function jobFireLicense($fire_guard_license): array

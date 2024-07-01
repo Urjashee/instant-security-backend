@@ -56,7 +56,7 @@ class SecurityJob extends Model
         return $this->belongsTo(JobType::class, "job_type_id");
     }
     public function job_details() {
-        return $this->hasMany(JobDetail::class,"job_id","id");
+        return $this->hasMany(JobDetail::class,"job_id");
     }
     public function job_applied_guards() {
         return $this->hasMany(JobAppliedGuard::class,"job_id","id");

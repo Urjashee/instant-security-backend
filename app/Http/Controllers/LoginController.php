@@ -39,13 +39,13 @@ class LoginController extends Controller
                 if ($user->active == 0 && $user->profile == 0 && $user->status == 0)
                     return ResponseFormatter::errorResponse(Constants::USER_EMAIL_NOT_VERIFIED);
 
-                if ($user->active == 0 && $user->status == 1)
+                else if ($user->active == 0 && $user->status == 1)
                     return ResponseFormatter::errorResponse(Constants::USER_NOT_ACTIVE);
 
-                if ($user->active == 0 && $user->status == 0 && $user->profile == 1)
+                else if ($user->active == 0 && $user->status == 0 && $user->profile == 1)
                     return ResponseFormatter::errorResponse(Constants::USER_NOT_VERIFIED);
 
-                if (Hash::check($request->input("password"), $user->password)) {
+                else if (Hash::check($request->input("password"), $user->password)) {
                     list($token, $refreshToken) = UserFunctions::generateToken($user);
 
                     $this->deviceToken($user, $request, $token);

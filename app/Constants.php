@@ -27,6 +27,7 @@ class Constants
     const PENDING = 6;
     const PENDING_ASSIGNMENT = 8;
     const REJECTED_JOB = 7;
+    const ASSIGNED = 9;
     const ADMIN_USER = 1;
     const WEB_USER = 2;
     const MOBILE_USER = 3;

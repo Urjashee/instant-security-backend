@@ -197,14 +197,15 @@ class SecurityJobController extends Controller
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         } else if ($status == 0) {
-
-            $jobs = SecurityJob::whereIn("job_status", [Constants::OPEN,
+//TODO
+            $jobs = SecurityJob::whereIn("job_status", [Constants::OPEN, Constants::UPCOMING,
                 Constants::PENDING_ASSIGNMENT])
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
 
         } else if ($status == 1) {
-            $jobs = SecurityJob::where("job_status", Constants::UPCOMING)
+            $jobs = SecurityJob::where("job_status", [Constants::UPCOMING,
+                Constants::ASSIGNED])
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
         } else if ($status == 2) {
@@ -215,15 +216,15 @@ class SecurityJobController extends Controller
             $jobs = SecurityJob::where("job_status", Constants::CANCELLED)
                 ->orderBy("security_jobs.created_at", "DESC")
                 ->get();
-        } else {
-            $jobs = SecurityJob::where("job_status", $status)
-                ->orderBy("security_jobs.created_at", "DESC")
-                ->get();
         }
         if ($jobs) {
             foreach ($jobs as $job) {
-                $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status, null);
+                $job_data = JobFunctions::jobDetailsAdmin($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status, null);
                 $contentData[] = $job_data;
+                $contentData = array_filter($contentData, function($item) {
+                    return !empty($item);
+                });
+                $contentData = array_values($contentData);
             }
             return ResponseFormatter::successResponse("Jobs", $contentData);
         } else {
