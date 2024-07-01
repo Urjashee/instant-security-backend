@@ -496,13 +496,64 @@ class JobFunctions
             return $content_data;
         }
         if ($status == 1) {
-
+            $job_detail = JobDetail::where("job_id", $job->id)->first();
+            if ($role == 3) {
+                if ($job->security_jobs->clock_in_request == 1 && $job->security_jobs->clock_in_request_accepted == 1) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+                    ];
+                } else {
+                    $content_data += [
+                        "job_status_id" => Constants::UPCOMING,
+                        "job_status_name" => ConfigList::jobType(1),
+                    ];
+                }
+            } else {
+                if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::UPCOMING,
+                        "job_status_name" => "Clock-in request",
+                    ];
+                } else if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 1 && $job_detail->clock_out_request == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+                    ];
+                } else if ($job_detail->clock_out_request == 1 && $job_detail->clock_out_request_accepted == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => "Clock-out request",
+                    ];
+                } else {
+                    $content_data += [
+                        "job_status_id" => Constants::OPEN,
+                        "job_status_name" => ConfigList::jobType(Constants::OPEN),
+                    ];
+                }
+            }
+            return $content_data;
         }
         if ($status == 2) {
-
+            $content_data += [
+                "job_status_id" => $job->job_status,
+                "job_status_name" => ConfigList::jobType($job->job_status),
+            ];
+            return $content_data;
         }
         if ($status == 3) {
-
+            $content_data += [
+                "job_status_id" => $job->job_status,
+                "job_status_name" => ConfigList::jobType($job->job_status),
+            ];
+            return $content_data;
+        }
+        if ($status == 4) {
+            $content_data += [
+                "job_status_id" => Constants::ONGOING,
+                "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+            ];
+            return $content_data;
         }
         if ($status == 6) {
             if ($job->job_status == Constants::PENDING)
