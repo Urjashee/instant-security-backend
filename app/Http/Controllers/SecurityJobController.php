@@ -178,8 +178,12 @@ class SecurityJobController extends Controller
         }
         if ($jobs) {
             foreach ($jobs as $job) {
-                $job_data = JobFunctions::jobDetails($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status, null);
+                $job_data = JobFunctions::jobDetailsCustomer($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status, null);
                 $contentData[] = $job_data;
+                $contentData = array_filter($contentData, function($item) {
+                    return !empty($item);
+                });
+                $contentData = array_values($contentData);
             }
             return ResponseFormatter::successResponse("Jobs", $contentData);
         } else {

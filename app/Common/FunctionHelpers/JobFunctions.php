@@ -569,17 +569,137 @@ class JobFunctions
             return $content_data;
         }
     }
-
-    public static function removeEmptyArrays(array $array): array {
-        foreach ($array as $key => &$value) {
-            if (is_array($value)) {
-                $value = JobFunctions::removeEmptyArrays($value);
-                if (empty($value)) {
-                    unset($array[$key]);
+    public static function jobDetailsCustomer($job, $role, $status, $job_details): array
+    {
+        $s3SiteName = Config::get('constants.s3_bucket');
+        $customer_profile = CustomerProfile::where("user_id", $job->user_id)->first();
+        $activity_logs_data = array();
+        $incident_report_data = array();
+        $content_data = [
+            "job_id" => $job->id,
+            "job_event_name" => $job->event_name,
+            "job_description" => $job->job_description,
+            "job_roles_and_responsibility" => $job->roles_and_responsibility,
+            "job_type_id" => $job->job_type_id,
+            "job_type" => $job->job_type->name,
+            "job_osha_license_id" => $job->osha_license_id == null ? "" : $job->osha_license_id,
+            "job_osha_license" => $job->osha_license_id == null ? "" : ConfigList::oshaType($job->osha_license_id),
+            "job_state_id" => $job->state_id,
+            "job_state" => $job->state->name,
+            "job_start_date" => Carbon::createFromTimestamp($job->event_start)->format('Y-m-d\TH:i:s.uP'),
+            "job_price" => $job->price,
+            "job_max_price" => $job->max_price,
+            "job_start_time" => Carbon::createFromTimestamp($job->event_start)->format('Y-m-d\TH:i:s.uP'),
+            "job_end_time" => Carbon::createFromTimestamp($job->event_end)->format('Y-m-d\TH:i:s.uP'),
+            "job_address" => $job->street1 . ", " . $job->street2 . ", " . $job->city . ", " . $job->state->name . ", " . $job->zipcode,
+            "additional_hour_request" => !($job->additional_hour_request == 0),
+            "additional_hours" => $job->additional_hours == null ? 0 : $job->additional_hours,
+            "additional_hours_accepted" => !($job->additional_hours_accepted == 0),
+            "job_posted_by_id" => $job->user_id,
+            "job_posted_by_name" => $job->users->first_name . " " . $job->users->last_name,
+            "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
+            "job_chat_id" => $job->chat_sid == null ? "" : $job->chat_sid,
+        ];
+        $job_details = JobDetail::where("job_id", $job->id)->first();
+        if ($status == 0) {
+            if ($job_details) {
+                if ($job_details->clock_in_request) {
+                    return [];
                 }
             }
+            if ($role == 2 && ($job->job_status == Constants::OPEN ||
+                    $job->job_status == Constants::UPCOMING ||
+                    $job->job_status == Constants::REJECTED_JOB ||
+                    $job->job_status == Constants::PENDING ||
+                    $job->job_status == Constants::PENDING_ASSIGNMENT)) {
+                if ($job->job_status == Constants::OPEN ||
+                    $job->job_status == Constants::PENDING_ASSIGNMENT) {
+                    $content_data += [
+                        "job_status_id" => Constants::UPCOMING,
+                        "job_status_name" => ConfigList::jobType(Constants::UPCOMING),
+                    ];
+                } else {
+                    $content_data += [
+                        "job_status_id" => $job->job_status,
+                        "job_status_name" => ConfigList::jobType($job->job_status),
+                    ];
+                }
+            }
+            return $content_data;
         }
-        return $array;
+        if ($status == 1) {
+            $job_detail = JobDetail::where("job_id", $job->id)->first();
+            if ($role == 3) {
+                if ($job->security_jobs->clock_in_request == 1 && $job->security_jobs->clock_in_request_accepted == 1) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+                    ];
+                } else {
+                    $content_data += [
+                        "job_status_id" => Constants::UPCOMING,
+                        "job_status_name" => ConfigList::jobType(1),
+                    ];
+                }
+            } else {
+                if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::UPCOMING,
+                        "job_status_name" => "Clock-in request",
+                    ];
+                } else if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 1 && $job_detail->clock_out_request == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+                    ];
+                } else if ($job_detail->clock_out_request == 1 && $job_detail->clock_out_request_accepted == 0) {
+                    $content_data += [
+                        "job_status_id" => Constants::ONGOING,
+                        "job_status_name" => "Clock-out request",
+                    ];
+                } else {
+                    $content_data += [
+                        "job_status_id" => Constants::OPEN,
+                        "job_status_name" => ConfigList::jobType(Constants::OPEN),
+                    ];
+                }
+            }
+            return $content_data;
+        }
+        if ($status == 2) {
+            $content_data += [
+                "job_status_id" => $job->job_status,
+                "job_status_name" => ConfigList::jobType($job->job_status),
+            ];
+            return $content_data;
+        }
+        if ($status == 3) {
+            $content_data += [
+                "job_status_id" => $job->job_status,
+                "job_status_name" => ConfigList::jobType($job->job_status),
+            ];
+            return $content_data;
+        }
+        if ($status == 4) {
+            $content_data += [
+                "job_status_id" => Constants::ONGOING,
+                "job_status_name" => ConfigList::jobType(Constants::ONGOING),
+            ];
+            return $content_data;
+        }
+        if ($status == 6) {
+            if ($job->job_status == Constants::PENDING)
+                $content_data += [
+                    "job_status_id" => Constants::PENDING,
+                    "job_status_name" => ConfigList::jobType(Constants::PENDING),
+                ];
+            if ($job->job_status == Constants::REJECTED_JOB)
+                $content_data += [
+                    "job_status_id" => Constants::REJECTED_JOB,
+                    "job_status_name" => ConfigList::jobType(Constants::REJECTED_JOB),
+                ];
+            return $content_data;
+        }
     }
 
     public static function jobFireLicense($fire_guard_license): array
