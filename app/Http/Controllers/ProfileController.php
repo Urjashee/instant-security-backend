@@ -438,6 +438,10 @@ class ProfileController extends Controller
     }
 
     public function deleteFireGuardLicense(Request $request, $id): \Illuminate\Http\JsonResponse {
+        $fire_guard_license_count = FireGuardLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->count();
+        if ($fire_guard_license_count <= 1) {
+            return ResponseFormatter::errorResponse("Add a new license before deleting!");
+        }
         $upcoming_jobs = ProfileFunctions::checkUpcomingJobs($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
         if (sizeof($upcoming_jobs) >= 1)
             return ResponseFormatter::errorResponse("You have an upcoming job!");
@@ -450,7 +454,6 @@ class ProfileController extends Controller
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
 
-        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $fireGuardLicense = FireGuardLicense::where('user_id', $request->input(Constants::CURRENT_USER_ID_KEY))
             ->where('id', $id)
             ->first();
@@ -463,8 +466,6 @@ class ProfileController extends Controller
             } catch (\Exception $e) {
                 return ResponseFormatter::errorResponse($e->getMessage());
             }
-            $user->is_edit = 0;
-            $user->update();
             return ResponseFormatter::successResponse("Fire guard license successfully deleted");
         } else {
             return ResponseFormatter::errorResponse("Fire guard license could not be deleted");
@@ -568,6 +569,10 @@ class ProfileController extends Controller
 
     public function deleteStateLicense(Request $request, $state_id): \Illuminate\Http\JsonResponse
     {
+        $state_license_count = StateLicense::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->count();
+        if ($state_license_count <= 1) {
+            return ResponseFormatter::errorResponse("Add a new license before deleting!");
+        }
         $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
         if ($auth_user)
             return ResponseFormatter::forbiddenResponse("Forbidden action!");
@@ -596,7 +601,7 @@ class ProfileController extends Controller
             $stateLicense->delete();
             return ResponseFormatter::successResponse("State license deleted ");
         } else {
-            return ResponseFormatter::errorResponse("No tate licence found for this user with this state");
+            return ResponseFormatter::errorResponse("No state licence found for this user with this state");
         }
     }
 }
