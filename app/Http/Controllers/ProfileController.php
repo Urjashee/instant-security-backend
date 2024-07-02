@@ -232,7 +232,7 @@ class ProfileController extends Controller
 
         $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
         if ($auth_user)
-            return ResponseFormatter::forbiddenResponse("Forbidden action!");
+            return ResponseFormatter::forbiddenResponse("Your profile is under review. Please wait for admin approval");
 
         $userProfile = UserProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
@@ -352,7 +352,7 @@ class ProfileController extends Controller
 
         $auth_user = ProfileFunctions::checkEditStatus($request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);
         if ($auth_user)
-            return ResponseFormatter::forbiddenResponse("Forbidden action!");
+            return ResponseFormatter::forbiddenResponse("Your profile is under review. Please wait for admin approval");
 
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
