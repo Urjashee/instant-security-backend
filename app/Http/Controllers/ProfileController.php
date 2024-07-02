@@ -450,6 +450,7 @@ class ProfileController extends Controller
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
 
+        $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         $fireGuardLicense = FireGuardLicense::where('user_id', $request->input(Constants::CURRENT_USER_ID_KEY))
             ->where('id', $id)
             ->first();
@@ -462,6 +463,8 @@ class ProfileController extends Controller
             } catch (\Exception $e) {
                 return ResponseFormatter::errorResponse($e->getMessage());
             }
+            $user->is_edit = 0;
+            $user->update();
             return ResponseFormatter::successResponse("Fire guard license successfully deleted");
         } else {
             return ResponseFormatter::errorResponse("Fire guard license could not be deleted");
