@@ -216,7 +216,7 @@ class ProfileController extends Controller
             $user->status = 0;
             $user->active = 0;
             $user->profile = 1;
-            $user->edit = 0;
+            $user->is_edit = 0;
             $user->update();
             return ResponseFormatter::successResponse("User needs to logout");
         } else {
