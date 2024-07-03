@@ -180,7 +180,7 @@ class SecurityJobController extends Controller
             foreach ($jobs as $job) {
                 $job_data = JobFunctions::jobDetailsCustomer($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status, null);
                 $contentData[] = $job_data;
-                $contentData = array_filter($contentData, function($item) {
+                $contentData = array_filter($contentData, function ($item) {
                     return !empty($item);
                 });
                 $contentData = array_values($contentData);
@@ -225,7 +225,7 @@ class SecurityJobController extends Controller
             foreach ($jobs as $job) {
                 $job_data = JobFunctions::jobDetailsAdmin($job, $request->input(Constants::CURRENT_ROLE_ID_KEY), $status, null);
                 $contentData[] = $job_data;
-                $contentData = array_filter($contentData, function($item) {
+                $contentData = array_filter($contentData, function ($item) {
                     return !empty($item);
                 });
                 $contentData = array_values($contentData);
@@ -412,16 +412,16 @@ class SecurityJobController extends Controller
         $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($status == Constants::ACCEPTED) {
             $auth_user = JobFunctions::checkUserStatus($request->input(Constants::CURRENT_USER_ID_KEY));
-            $next_job_status = JobFunctions::nextJobStatus($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
+//            $next_job_status = JobFunctions::nextJobStatus($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
             $license_expiry = JobFunctions::licenceExpiry($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
             $already_applied = JobFunctions::alreadyApplied($request->input(Constants::CURRENT_USER_ID_KEY), $job_id);
             $banking_details = JobFunctions::bankingDetails($request->input(Constants::CURRENT_USER_ID_KEY));
             if (!$auth_user) {
                 return ResponseFormatter::unauthorizedResponse("User status is inactive");
             }
-            if (!$next_job_status) {
-                return ResponseFormatter::errorResponse(StringTemplate::response(1));
-            }
+//            if (!$next_job_status) {
+//                return ResponseFormatter::errorResponse(StringTemplate::response(1));
+//            }
             if (!$license_expiry) {
                 return ResponseFormatter::errorResponse(StringTemplate::response(2));
             }
@@ -702,15 +702,43 @@ class SecurityJobController extends Controller
         }
     }
 
+    public function clockOutResponseDetails(Request $request, $job_id): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+
+        $job_details = JobDetail::where("job_id", $job_id)->first();
+        if ($job_details) {
+            if ($job_details->clock_out_request == 0) {
+                return ResponseFormatter::errorResponse("Clock-out request not sent yet!");
+            } else {
+                $content_data = [
+                    "job_id" => $job_details->job_id,
+                    "job_clock_out_time" => Carbon::createFromTimestamp($job_details->clock_out_time)->format('Y-m-d\TH:i:s.uP'),
+                    "job_clock_out_latitude" => $job_details->clock_out_latitude,
+                    "job_clock_out_longitude" => $job_details->clock_out_longitude,
+                ];
+            }
+            return ResponseFormatter::successResponse("Clock-out details", $content_data);
+        } else {
+            return ResponseFormatter::errorResponse("Clock-out details couldn't be fetched");
+        }
+    }
+
     public function clockOutResponse(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
     {
         $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+
         else {
             $job_details = JobDetail::where("job_id", $job_id)
                 ->where("clock_out_request", 1)
                 ->first();
+            if (!$job_details) {
+                return ResponseFormatter::errorResponse("Clock-out request not sent yet!");
+            }
             if ($approval == Constants::DENIED) {
                 $job_details->clock_out_request = Constants::DENIED;
                 $job_details->clock_out_time = null;
@@ -801,7 +829,7 @@ class SecurityJobController extends Controller
                         $job->user_id, 7, StringTemplate::typeMessage(Constants::EXTRA_TIME_REJECTED, $job->event_name, null, $job->id));
 
                 } else {
-                    JobFunctions::checkAdditionalTime($job, $job_details);
+                    JobFunctions::checkAdditionalTime($job, $job_details, $job->additional_hours);
                     (new NotificationController())->addNotifications($job_id, $request->input(Constants::CURRENT_USER_ID_KEY),
                         $job->user_id, 6, StringTemplate::typeMessage(Constants::EXTRA_TIME_ACCEPTED, $job->event_name, null, $job->id));
                 }

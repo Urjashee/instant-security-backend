@@ -95,6 +95,7 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                     Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobsCreated']);
                     Route::patch("/clock-in-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockInResponse']);
                     Route::patch("/clock-out-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
+                    Route::get("/clock-out-response-details/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponseDetails']);
                     Route::post("/request-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'requestMoreTime']);
                 });
                 Route::get("/job-type", [\App\Http\Controllers\JobTypeController::class, 'getAllJobTypes']);

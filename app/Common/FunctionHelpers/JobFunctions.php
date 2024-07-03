@@ -211,7 +211,7 @@ class JobFunctions
                     $assigned_job_all = true;
                     $guards_data = array();
                     foreach ($applied_jobs as $applied_job) {
-                        $user_profile = UserProfile::where("user_id",$applied_job->guard_id)->first();
+                        $user_profile = UserProfile::where("user_id", $applied_job->guard_id)->first();
                         $guards_data[] = [
                             "guard_id" => $applied_job->guard_id,
                             "guard_name" => $applied_job->user->first_name . " " . $applied_job->user->last_name,
@@ -346,17 +346,17 @@ class JobFunctions
         }
         if ($role == 2) {
             $content_data += [
-                "osha_license_id" => $job->osha_license_id == null ? "" : $job->osha_license_id ,
+                "osha_license_id" => $job->osha_license_id == null ? "" : $job->osha_license_id,
                 "osha_license_name" => $job->osha_license_id == null ? "" : ConfigList::oshaType($job->osha_license_id),
             ];
             if ($job_details != null) {
                 $content_data += [
                     "clock_in_request" => $job_details->clock_in_request == 0 ? FALSE : TRUE,
                     "clock_in_request_accepted" => $job_details->clock_in_request_accepted == 0 ? FALSE : TRUE,
-                    "clock_in_time" => $job_details->clock_in_time == null ? "" : $job_details->clock_in_time,
+                    "clock_in_time" => $job_details->clock_in_time == null ? "" : Carbon::createFromTimestamp($job_details->clock_in_time)->format('Y-m-d\TH:i:s.uP'),
                     "clock_out_request" => $job_details->clock_out_request == 0 ? FALSE : TRUE,
                     "clock_out_request_accepted" => $job_details->clock_out_request_accepted == 0 ? FALSE : TRUE,
-                    "clock_out_time" => $job_details->clock_out_time == null ? "" : $job_details->clock_out_time,
+                    "clock_out_time" => $job_details->clock_out_time == null ? "" : Carbon::createFromTimestamp($job_details->clock_out_time)->format('Y-m-d\TH:i:s.uP'),
                 ];
             }
         }
@@ -407,6 +407,7 @@ class JobFunctions
 
         return $content_data;
     }
+
     public static function jobDetailsAdmin($job, $role, $status, $job_details): array
     {
         $s3SiteName = Config::get('constants.s3_bucket');
@@ -462,7 +463,7 @@ class JobFunctions
                     $assigned_job_all = true;
                     $guards_data = array();
                     foreach ($applied_jobs as $applied_job) {
-                        $user_profile = UserProfile::where("user_id",$applied_job->guard_id)->first();
+                        $user_profile = UserProfile::where("user_id", $applied_job->guard_id)->first();
                         $guards_data[] = [
                             "guard_id" => $applied_job->guard_id,
                             "guard_name" => $applied_job->user->first_name . " " . $applied_job->user->last_name,
@@ -569,6 +570,7 @@ class JobFunctions
             return $content_data;
         }
     }
+
     public static function jobDetailsCustomer($job, $role, $status, $job_details): array
     {
         $s3SiteName = Config::get('constants.s3_bucket');
@@ -791,6 +793,7 @@ class JobFunctions
         }
         return $content_data;
     }
+
     public static function viewSelectedJobs($customer_profile, $status, $jobs, $user_id): array
     {
         $s3SiteName = Config::get('constants.s3_bucket');
@@ -872,16 +875,15 @@ class JobFunctions
         return true;
     }
 
-    public static function checkAdditionalTime($job, $job_detail)
+    public static function checkAdditionalTime($job, $job_detail, $additional_hours)
     {
-        if ($job->additional_hours_accepted) {
+        if (!$job->additional_hours_accepted) {
             $hours = $job->total_hours + $job->additional_hours;
-            $job->event_add = $job->event_add + $job->additional_hours;
-            $job->additional_hours_accepted = Constants::ACCEPTED;
-        } else {
-            $hours = $job->total_hours;
+            $job->additional_hours_accepted = 1;
+            $job->event_end = (3600 * $additional_hours) + $job->event_end;
         }
         $job->total_price = $hours * $job->price;
+        $job->max_price = $hours * $job->price;
         $job->update();
     }
 
