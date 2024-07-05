@@ -108,7 +108,9 @@ class NotificationController extends Controller
             $notification = FcmNotification::fcmPushNotification(
                 $request->input("token"),
                 $request->input("title"),
-                $request->input("body"));
+                $request->input("body"),
+                $request->input("job_id"),
+                $request->input("notification_type"));
 
             return ResponseFormatter::successResponse($notification);
         } catch (\Exception $e) {
