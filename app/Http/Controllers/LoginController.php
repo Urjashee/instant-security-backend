@@ -159,10 +159,13 @@ class LoginController extends Controller
                 return ResponseFormatter::errorResponse($validator->errors()->first());
         }
 
-        if ($request->has("device_token") && $request->input("device_token") != null) {
-            $deviceToken = DeviceTokens::where('device_token', $request->input("device_token"));
-            if ($deviceToken) {
-                $deviceToken->delete();
+        if ($request->has("device_token")) {
+            $deviceTokens = DeviceTokens::where('device_token', $request->input("device_token"))->get();
+            if ($deviceTokens) {
+                foreach ($deviceTokens as $deviceToken) {
+                    $device = DeviceTokens::where('device_token', $deviceToken->device_token)->first();
+                    $device->delete();
+                }
                 return ResponseFormatter::successResponse("User Logged out");
             } else {
                 return ResponseFormatter::errorResponse("Cannot log out");
