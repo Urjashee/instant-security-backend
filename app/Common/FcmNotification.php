@@ -16,8 +16,8 @@ class FcmNotification{
             "notification" => [
                 "title" => $title,
                 "body" => $body,
-                "job_id" => $job_id,
-                "notification_type" => $type,
+//                "job_id" => $job_id,
+//                "notification_type" => $type,
             ]
         ];
         $dataString = json_encode($data);
