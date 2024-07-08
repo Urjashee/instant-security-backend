@@ -168,6 +168,12 @@ class ProfileController extends Controller
             $stateLicense->cpr_certificate_expiry = $request->input("cpr_certificate_expiry");
             $stateLicense->save();
 
+            $user = User::where("id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
+            if ($user->profile == 1) {
+                $user->is_edit = 0;
+                $user->update();
+            }
+
             return ResponseFormatter::successResponse("State licenses added");
         }
     }
