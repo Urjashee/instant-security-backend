@@ -979,14 +979,22 @@ class SecurityJobController extends Controller
 
     public function expireJobs(): \Illuminate\Http\JsonResponse
     {
-        $jobs = SecurityJob::where("job_status", Constants::OPEN)
-            ->where('event_end', "<", time())
+        $jobs = SecurityJob::where('event_end', "<", time())
+            ->whereIn("job_status", [Constants::OPEN, Constants::UPCOMING, Constants::PENDING])
             ->get();
 
         if ($jobs) {
             foreach ($jobs as $job) {
-                $job->job_status = Constants::EXPIRED;
-                $job->update();
+                if ($job->job_status == 0 || $job->job_status == 6) {
+                    $job->job_status = Constants::EXPIRED;
+                    $job->update();
+                } else if ($job->job_status == 1) {
+                    $job_details = JobDetail::where("job_id", $job->id)->first();
+                    if ($job_details->clock_in_request == 0) {
+                        $job->job_status = Constants::EXPIRED;
+                        $job->update();
+                    }
+                }
             }
             return ResponseFormatter::successResponse("Jobs has been expired");
         } else {
