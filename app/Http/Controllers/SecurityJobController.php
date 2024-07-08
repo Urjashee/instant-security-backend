@@ -980,12 +980,12 @@ class SecurityJobController extends Controller
     public function expireJobs(): \Illuminate\Http\JsonResponse
     {
         $jobs = SecurityJob::where('event_end', "<", time())
-            ->whereIn("job_status", [Constants::OPEN, Constants::UPCOMING, Constants::PENDING])
+            ->whereIn("job_status", [Constants::OPEN, Constants::UPCOMING, Constants::PENDING, Constants::PENDING_ASSIGNMENT])
             ->get();
 
         if ($jobs) {
             foreach ($jobs as $job) {
-                if ($job->job_status == 0 || $job->job_status == 6) {
+                if ($job->job_status == 0 || $job->job_status == 6 || $job->job_status == 8) {
                     $job->job_status = Constants::EXPIRED;
                     $job->update();
                 } else if ($job->job_status == 1) {
