@@ -51,6 +51,7 @@ class NotificationController extends Controller
         $notifications = Notification::where("notification_user_id", $request->input(Constants::CURRENT_USER_ID_KEY))
             ->where("type","!=", 5)
             ->orderBy("created_at", "desc")
+            ->orderBy("read", "desc")
             ->get();
         if ($notifications) {
             foreach ($notifications as $notification) {
