@@ -81,7 +81,7 @@ class AccountController extends Controller
                 $user->status = 1;
                 $user->profile = 0;
                 if ($user->user_role_id == 3) {
-                    $user_profile->terms_and_condition = 0;
+                    $user_profile->terms_and_condition = 1;
                     $user_profile->update();
                 }
                 $user->update();
