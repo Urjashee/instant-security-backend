@@ -654,7 +654,7 @@ class SecurityJobController extends Controller
 
     public function clockInResponse(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
     {
-        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), (Constants::WEB_USER || Constants::ADMIN_USER));
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
