@@ -136,6 +136,7 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
 
                 Route::patch("/state/{id}", [\App\Http\Controllers\StateController::class, 'changeStateStatus']);
                 Route::get("/transactions", [\App\Http\Controllers\SecurityJobController::class, 'transactions']);
+                Route::patch("/transactions-status/{id}", [\App\Http\Controllers\SecurityJobController::class, 'updateTransactionStatus']);
 
                 Route::patch("/review-job/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'reviewJob']);
                 Route::patch("/assign-job/{job_id}/{user_id}", [\App\Http\Controllers\SecurityJobController::class, 'assignJob']);

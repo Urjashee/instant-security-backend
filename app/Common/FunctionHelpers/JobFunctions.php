@@ -18,6 +18,7 @@ use App\Models\JobDetail;
 use App\Models\JobReview;
 use App\Models\SecurityJob;
 use App\Models\StateLicense;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\UserProfile;
 use Carbon\Carbon;
@@ -669,7 +670,9 @@ class JobFunctions
             return $content_data;
         }
         if ($status == 2) {
+            $transaction = Transaction::where("job_id", $job->id)->first();
             $content_data += [
+                "transaction_status" => $transaction->status,
                 "job_status_id" => $job->job_status,
                 "job_status_name" => ConfigList::jobType($job->job_status),
             ];

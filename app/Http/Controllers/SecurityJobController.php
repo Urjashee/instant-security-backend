@@ -654,7 +654,7 @@ class SecurityJobController extends Controller
 
     public function clockInResponse(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
     {
-        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::WEB_USER);
+        $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), (Constants::WEB_USER || Constants::ADMIN_USER));
         if (!$auth_user)
             return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
         else {
@@ -902,6 +902,22 @@ class SecurityJobController extends Controller
         $transactions = Transaction::orderBy("created_at", "DESC")->get();
         if ($transactions) {
             return ResponseFormatter::successResponse("Transactions", $transactions);
+        } else {
+            return ResponseFormatter::errorResponse("No transactions");
+        }
+    }
+    public function updateTransactionStatus($job_id): \Illuminate\Http\JsonResponse
+    {
+        $transaction = Transaction::where("id", $job_id)->first();
+        if ($transaction) {
+            if ($transaction->status == 0) {
+                $transaction->status = 1;
+                $transaction->update();
+            } else if ($transaction->status == 1) {
+                $transaction->status = 0;
+                $transaction->update();
+            }
+            return ResponseFormatter::successResponse("Transaction updated");
         } else {
             return ResponseFormatter::errorResponse("No transactions");
         }

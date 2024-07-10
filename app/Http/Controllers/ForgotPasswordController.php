@@ -23,7 +23,7 @@ class ForgotPasswordController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
         ]);
-        $siteName = Config::get('constants.url');
+        $siteName = Config::get('constants.web_url');
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
 
