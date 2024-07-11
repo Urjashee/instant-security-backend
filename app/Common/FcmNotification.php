@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 
 class FcmNotification{
-    public static function fcmPushNotification($firebaseToken, $title, $body, $job_id, $type): \Illuminate\Http\RedirectResponse
+    public static function fcmPushNotification($firebaseToken, $title, $body, $job_id, $type)
     {
         //$SERVER_API_KEY = env('FCM_SERVER_KEY');
 
@@ -16,8 +16,6 @@ class FcmNotification{
             "notification" => [
                 "title" => $title,
                 "body" => $body,
-                "job_id" => $job_id,
-                "notification_type" => $type,
             ],
             "data" => [
                 "title" => $title,
@@ -26,26 +24,19 @@ class FcmNotification{
                 "notification_type" => $type,
             ]
         ];
-        $dataString = json_encode($data);
+        $options = array(
+            'http' => array(
+                'method'  => 'POST',
+                'content' => json_encode( $data ),
+                'header'=>  "Content-Type: application/json\r\n" .
+                    "Accept: application/json\r\n" .
+                    "Authorization:key=".$SERVER_API_KEY
+            )
+        );
 
-        $headers = [
-            'Authorization: key=' . $SERVER_API_KEY,
-            'Content-Type: application/json',
-        ];
-
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
-
-        $response = curl_exec($ch);
-
-        return back()->with('success', $response);
-
+        $context  = stream_context_create( $options );
+        $result = file_get_contents( "https://fcm.googleapis.com/fcm/send", false, $context );
+        return json_decode( $result );
     }
 }
 
