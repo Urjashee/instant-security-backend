@@ -115,7 +115,7 @@ class NotificationController extends Controller
 
             return ResponseFormatter::successResponse($notification);
         } catch (\Exception $e) {
-            return ResponseFormatter::errorResponse($e->getMessage());
+            return ResponseFormatter::errorResponse($e->getMessage() . " error");
         }
     }
 }

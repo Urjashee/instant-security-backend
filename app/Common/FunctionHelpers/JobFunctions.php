@@ -316,8 +316,10 @@ class JobFunctions
             $content_data += [
                 "clock_in_request" => $job->security_jobs->clock_in_request == 0 ? FALSE : TRUE,
                 "clock_in_request_accepted" => $job->security_jobs->clock_in_request_accepted == 0 ? FALSE : TRUE,
+                "clock_in_time" => $job_details->clock_in_time == null ? "" : Carbon::createFromTimestamp($job_details->clock_in_time)->format('Y-m-d\TH:i:s.uP'),
                 "clock_out_request" => $job->security_jobs->clock_out_request == 0 ? FALSE : TRUE,
                 "clock_out_request_accepted" => $job->security_jobs->clock_out_request_accepted == 0 ? FALSE : TRUE,
+                "clock_out_time" => $job_details->clock_out_time == null ? "" : Carbon::createFromTimestamp($job_details->clock_out_time)->format('Y-m-d\TH:i:s.uP'),
             ];
         }
 //        if ($role != 2) {
