@@ -78,10 +78,9 @@ class AccountController extends Controller
         } else {
             if ($request->input("accepted") == 0) {
                 $user->active = 1;
-                $user->status = 1;
-                $user->profile = 0;
+                $user->status = 0;
+                $user->profile = 1;
                 if ($user->user_role_id == 3) {
-                    $user_profile->terms_and_condition = 1;
                     $user_profile->update();
                 }
                 $user->update();

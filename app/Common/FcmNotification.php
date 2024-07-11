@@ -13,10 +13,12 @@ class FcmNotification{
 
         $data = [
             "to" => $firebaseToken,
-//            "notification" => [
-//                "title" => $title,
-//                "body" => $body,
-//            ],
+            "notification" => [
+                "title" => $title,
+                "body" => $body,
+                "job_id" => $job_id,
+                "notification_type" => $type,
+            ],
             "data" => [
                 "title" => $title,
                 "body" => $body,
