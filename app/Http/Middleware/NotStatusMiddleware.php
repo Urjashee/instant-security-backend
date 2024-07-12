@@ -28,7 +28,7 @@ class NotStatusMiddleware
         $extra = [];
         if ($token->verify($signer, Config::get("jwt.secret"))) {
             $user = User::where("id", $token->getClaim("user_id"))->first();
-            if ($user->status) {
+            if ($user->status == 1) {
                 return $next($request);
             } else {
                 return ResponseFormatter::forbiddenResponse('User cannot access this. Contact Admin');

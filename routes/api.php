@@ -90,35 +90,37 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
         Route::group(["middleware" => ["not_active"]], function () {
             Route::group(['prefix' => '/web'], function () {
                 Route::post("/profile/edit", [\App\Http\Controllers\ProfileController::class, 'editCustomerProfile']);
-                Route::group(['prefix' => '/jobs'], function () {
-                    Route::post("/", [\App\Http\Controllers\SecurityJobController::class, 'addJobs']);
-                    Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'getJobs']);
-                    Route::get("/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
-                    Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobsCreated']);
-                    Route::patch("/clock-in-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockInResponse']);
-                    Route::patch("/clock-out-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
-                    Route::get("/clock-out-response-details/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponseDetails']);
-                    Route::post("/request-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'requestMoreTime']);
-                });
-                Route::get("/job-type", [\App\Http\Controllers\JobTypeController::class, 'getAllJobTypes']);
-                Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
-                Route::group(['prefix' => '/payment'], function () {
-                    Route::get("/ephemeral-key", [\App\Http\Controllers\PaymentController::class, 'getEphemeralKey']);
-                });
-                Route::group(['prefix' => '/card'], function () {
-                    Route::get("/list", [\App\Http\Controllers\PaymentController::class, 'getUserCard']);
-                    Route::delete("/delete/{card_id}", [\App\Http\Controllers\PaymentController::class, 'deleteCard']);
-                    Route::post("/save-payment-method", [\App\Http\Controllers\PaymentController::class, 'savePaymentMethod']);
+                Route::group(["middleware" => ["not_status"]], function () {
+                    Route::group(['prefix' => '/jobs'], function () {
+                        Route::post("/", [\App\Http\Controllers\SecurityJobController::class, 'addJobs']);
+                        Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'getJobs']);
+                        Route::get("/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
+                        Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobsCreated']);
+                        Route::patch("/clock-in-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockInResponse']);
+                        Route::patch("/clock-out-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponse']);
+                        Route::get("/clock-out-response-details/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponseDetails']);
+                        Route::post("/request-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'requestMoreTime']);
+                    });
+                    Route::get("/job-type", [\App\Http\Controllers\JobTypeController::class, 'getAllJobTypes']);
+                    Route::get("/job-type/{id}", [\App\Http\Controllers\JobTypeController::class, 'getJobType']);
+                    Route::group(['prefix' => '/payment'], function () {
+                        Route::get("/ephemeral-key", [\App\Http\Controllers\PaymentController::class, 'getEphemeralKey']);
+                    });
+                    Route::group(['prefix' => '/card'], function () {
+                        Route::get("/list", [\App\Http\Controllers\PaymentController::class, 'getUserCard']);
+                        Route::delete("/delete/{card_id}", [\App\Http\Controllers\PaymentController::class, 'deleteCard']);
+                        Route::post("/save-payment-method", [\App\Http\Controllers\PaymentController::class, 'savePaymentMethod']);
+                    });
+                    Route::group(['prefix' => '/notifications'], function () {
+                        Route::get("/", [\App\Http\Controllers\NotificationController::class, 'getNotifications']);
+                        Route::get("/count", [\App\Http\Controllers\NotificationController::class, 'countNotifications']);
+                        Route::patch("/read/{id}", [\App\Http\Controllers\NotificationController::class, 'readNotifications']);
+                    });
                 });
 
                 Route::post("/review", [\App\Http\Controllers\SecurityJobController::class, 'addJobReview']);
                 Route::group(['prefix' => '/faq'], function () {
                     Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);
-                });
-                Route::group(['prefix' => '/notifications'], function () {
-                    Route::get("/", [\App\Http\Controllers\NotificationController::class, 'getNotifications']);
-                    Route::get("/count", [\App\Http\Controllers\NotificationController::class, 'countNotifications']);
-                    Route::patch("/read/{id}", [\App\Http\Controllers\NotificationController::class, 'readNotifications']);
                 });
             });
         });

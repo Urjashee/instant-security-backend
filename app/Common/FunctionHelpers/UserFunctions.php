@@ -155,6 +155,8 @@ class UserFunctions
                 } else {
                     if (!$user->profile) {
                         $active = "Inactive";
+                    } else if (!$user->status) {
+                        $active = "Pending profile";
                     } else {
                         $active = "Active";
                     }
