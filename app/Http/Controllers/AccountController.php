@@ -81,6 +81,7 @@ class AccountController extends Controller
                 $user->status = 0;
                 $user->profile = 1;
                 if ($user->user_role_id == 3) {
+                    $user->is_edit = 1;
                     $user_profile->update();
                 }
                 $user->update();

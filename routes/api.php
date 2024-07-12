@@ -57,17 +57,19 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
                     Route::delete("/delete-state-licenses/{id}", [\App\Http\Controllers\ProfileController::class, 'deleteStateLicense']);
                 });
                 Route::group(['prefix' => '/jobs'], function () {
-                    Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'selectedJobs']);
-                    Route::get("/view/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
-                    Route::get("/open", [\App\Http\Controllers\SecurityJobController::class, 'getOpenJobs']);
-                    Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobs']);
-                    Route::patch("/update/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'updateJobStatus']);
-                    Route::patch("/clock-in-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockInRequest']);
-                    Route::post("/clock-out-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutRequest']);
-                    Route::post("/incident-report/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'addIncidentReport']);
-                    Route::post("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'addActivityReport']);
-                    Route::get("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'getActivityReport']);
-                    Route::post("/response-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'responseMoreTime']);
+                    Route::group(["middleware" => ["not_status"]], function () {
+                        Route::get("/", [\App\Http\Controllers\SecurityJobController::class, 'selectedJobs']);
+                        Route::get("/view/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
+                        Route::get("/open", [\App\Http\Controllers\SecurityJobController::class, 'getOpenJobs']);
+                        Route::patch("/cancel/{id}", [\App\Http\Controllers\SecurityJobController::class, 'cancelJobs']);
+                        Route::patch("/update/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'updateJobStatus']);
+                        Route::patch("/clock-in-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockInRequest']);
+                        Route::post("/clock-out-request/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutRequest']);
+                        Route::post("/incident-report/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'addIncidentReport']);
+                        Route::post("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'addActivityReport']);
+                        Route::get("/activity-log/{job_id}", [\App\Http\Controllers\ActivityReportController::class, 'getActivityReport']);
+                        Route::post("/response-extra-time/{job_id}", [\App\Http\Controllers\SecurityJobController::class, 'responseMoreTime']);
+                    });
                 });
                 Route::group(['prefix' => '/faq'], function () {
                     Route::get("/", [\App\Http\Controllers\FaqController::class, 'getFaqs']);

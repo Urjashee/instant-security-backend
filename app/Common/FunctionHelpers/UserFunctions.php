@@ -130,6 +130,8 @@ class UserFunctions
                         $active = "Inactive";
                     } else if (!$user->is_edit) {
                         $active = "Pending";
+                    } else if (!$user->status) {
+                        $active = "Pending profile";
                     } else {
                         $active = "Active";
                     }
