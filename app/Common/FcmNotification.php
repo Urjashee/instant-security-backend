@@ -16,6 +16,8 @@ class FcmNotification{
             "notification" => [
                 "title" => $title,
                 "body" => $body,
+                "job_id" => $job_id,
+                "notification_type" => $type,
             ],
             "data" => [
                 "title" => $title,

@@ -675,6 +675,29 @@ class SecurityJobController extends Controller
         }
     }
 
+    public function clockInResponseAdmin(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, null, Constants::ADMIN_USER);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+        else {
+            $job_details = JobDetail::where("job_id", $job_id)->first();
+            if ($approval == Constants::DENIED) {
+                $job_details->clock_in_request = Constants::DENIED;
+                $job_details->clock_in_time = null;
+                $job_details->clock_in_latitude = null;
+                $job_details->clock_in_longitude = null;
+                $job_details->update();
+                return ResponseFormatter::successResponse("Clock-in rejected");
+            }
+            if ($approval == Constants::ACCEPTED) {
+                $job_details->clock_in_request_accepted = Constants::ACCEPTED;
+                $job_details->update();
+                return ResponseFormatter::successResponse("Clock-in accepted");
+            }
+        }
+    }
+
     public function clockOutRequest(Request $request, $job_id): \Illuminate\Http\JsonResponse
     {
         $auth_user = JobFunctions::authenticateUser($job_id, $request->input(Constants::CURRENT_USER_ID_KEY), Constants::MOBILE_USER);

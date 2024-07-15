@@ -144,6 +144,10 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
 
                 Route::patch("/review-job/{job_id}/{status}", [\App\Http\Controllers\SecurityJobController::class, 'reviewJob']);
                 Route::patch("/assign-job/{job_id}/{user_id}", [\App\Http\Controllers\SecurityJobController::class, 'assignJob']);
+                Route::group(['prefix' => '/jobs'], function () {
+                    Route::patch("/clock-in-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockInResponseAdmin']);
+                    Route::patch("/clock-out-response/{job_id}/{approval}", [\App\Http\Controllers\SecurityJobController::class, 'clockOutResponseAdmin']);
+                });
                 Route::get("/jobs", [\App\Http\Controllers\SecurityJobController::class, 'getAllJobs']);
                 Route::get("/jobs/{id}", [\App\Http\Controllers\SecurityJobController::class, 'getJobsById']);
                 Route::group(['prefix' => '/faq'], function () {
