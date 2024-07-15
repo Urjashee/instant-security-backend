@@ -792,6 +792,49 @@ class SecurityJobController extends Controller
             }
         }
     }
+    public function clockOutResponseAdmin(Request $request, $job_id, $approval): \Illuminate\Http\JsonResponse
+    {
+        $auth_user = JobFunctions::authenticateUser($job_id, null, Constants::ADMIN_USER);
+        if (!$auth_user)
+            return ResponseFormatter::unauthorizedResponse("Unauthorized action!");
+
+        else {
+            $job_details = JobDetail::where("job_id", $job_id)
+                ->where("clock_out_request", 1)
+                ->first();
+            if (!$job_details) {
+                return ResponseFormatter::errorResponse("Clock-out request not sent yet!");
+            }
+            if ($approval == Constants::DENIED) {
+                $job_details->clock_out_request = Constants::DENIED;
+                $job_details->clock_out_time = null;
+                $job_details->update();
+                return ResponseFormatter::successResponse("Clock-out rejected");
+            }
+            if ($approval == Constants::ACCEPTED) {
+                $jobs = SecurityJob::where("id", $job_id)->first();
+                $jobs->job_status = Constants::COMPLETED;
+                $job_details->clock_out_request_accepted = Constants::ACCEPTED;
+                try {
+                    StripeHelper::payInvoices($jobs->invoice_id);
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage());
+                }
+                $jobs->invoice_paid = Constants::ACCEPTED;
+                $jobs->update();
+                $job_details->update();
+                $transactions = new Transaction();
+                $transactions->job_id = $job_id;
+                $transactions->customer_id = $jobs->user_id;
+                $transactions->guard_id = $job_details->guard_id;
+                $transactions->transaction_date = strtotime(Carbon::now()->toDateTimeString());
+                $transactions->amount_to_guard = $jobs->total_price * 0.8;
+                $transactions->amount_to_app = $jobs->total_price * 0.2;
+                $transactions->save();
+                return ResponseFormatter::successResponse("Clock-out accepted");
+            }
+        }
+    }
 
     public function requestMoreTime(Request $request, $job_id): \Illuminate\Http\JsonResponse
     {

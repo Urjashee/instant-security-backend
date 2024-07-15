@@ -524,7 +524,7 @@ class JobFunctions
                         "job_status_id" => Constants::ONGOING,
                         "job_status_name" => ConfigList::jobType(Constants::ONGOING),
                     ];
-                } else if ($job_detail->clock_out_request == 1 && $job_detail->clock_out_request_accepted == 0) {
+                } else if ($job_detail->clock_in_request == 1 && $job_detail->clock_in_request_accepted == 1 && $job_detail->clock_out_request == 1 && $job_detail->clock_out_request_accepted == 0) {
                     $content_data += [
                         "job_status_id" => Constants::ONGOING,
                         "job_status_name" => "Clock-out request",
