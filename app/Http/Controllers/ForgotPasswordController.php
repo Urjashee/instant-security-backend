@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants;
 use App\Jobs\ForgotPasswordMail;
 use App\Jobs\SendMail;
 use App\Mail\ResetPassword;
@@ -24,6 +25,7 @@ class ForgotPasswordController extends Controller
             'email' => 'required|email',
         ]);
         $siteName = Config::get('constants.web_url');
+        $siteNameAdmin = Config::get('constants.admin_url');
         if ($validator->fails())
             return ResponseFormatter::errorResponse($validator->errors()->first());
 
@@ -49,7 +51,11 @@ class ForgotPasswordController extends Controller
                 $newPassword->type = 2;
                 $newPassword->created_at = Carbon::now();
                 $newPassword->save();
-                ForgotPasswordMail::dispatch($request->input("email"),$token,$user->first_name,$siteName,$user->user_role_id);
+                if ($user->user_role_id == Constants::ADMIN_USER) {
+                    ForgotPasswordMail::dispatch($request->input("email"), $token, $user->first_name, $siteNameAdmin, $user->user_role_id);
+                } else {
+                    ForgotPasswordMail::dispatch($request->input("email"), $token, $user->first_name, $siteName, $user->user_role_id);
+                }
 //                Mail::to($request->input("email"))
 //                    ->send(new ResetPassword($token, $user->first_name, $siteName,2));
                 return ResponseFormatter::successResponse("Email sent");

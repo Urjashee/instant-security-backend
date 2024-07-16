@@ -64,7 +64,7 @@ class SecurityJobController extends Controller
             return ResponseFormatter::successResponse("Not a valid job_type_id");
 
         if ($request->input("event_start") <= time())
-            return ResponseFormatter::successResponse("Job start time cannot be less than current time");
+            return ResponseFormatter::errorResponse("Job start time cannot be less than current time");
 
         $customer_profile = CustomerProfile::where("user_id", $request->input(Constants::CURRENT_USER_ID_KEY))->first();
         if ($customer_profile) {

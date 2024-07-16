@@ -81,6 +81,7 @@ Route::group(["middleware" => ["jwt.verify"]], function () {
     Route::group(["middleware" => ["rbac:customer,user"]], function () {
         Route::group(["middleware" => ["not_active"]], function () {
             Route::get("/chat/token/{job_id}", [\App\Http\Controllers\ChatController::class, 'getToken']);
+            Route::get("/chat/notification/{job_id}", [\App\Http\Controllers\ChatController::class, 'sendChatNotification']);
         });
     });
     Route::group(["middleware" => ["rbac:customer,super_admin"]], function () {

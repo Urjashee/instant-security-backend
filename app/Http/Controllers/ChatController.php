@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\FcmNotification;
 use App\Common\FunctionHelpers\TwillioHelper;
 use App\Common\ResponseFormatter;
+use App\Common\StringTemplate;
 use App\Constants;
 use App\Models\CustomerProfile;
+use App\Models\DeviceTokens;
 use App\Models\JobDetail;
 use App\Models\SecurityJob;
 use App\Models\User;
@@ -50,6 +53,40 @@ class ChatController extends Controller
                 ];
             }
             return ResponseFormatter::successResponse("Token", $chatToken);
+        }
+    }
+
+    public function sendChatNotification(Request $request, $id) {
+        $user = null;
+        if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::WEB_USER) {
+            $jobDetails = JobDetail::where("job_id", $id)->first();
+            if ($jobDetails) {
+                $user = $jobDetails->guard_id;
+            }
+        }
+        else if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::MOBILE_USER) {
+            $jobs = SecurityJob::where("id", $id)->first();
+            if ($jobs) {
+                $user = $jobs->user_id ;
+            }
+        }
+        $tokens = DeviceTokens::where("user_id", $user)
+            ->whereNotNull("device_token")
+            ->get();
+        if ($tokens) {
+            foreach ($tokens as $token) {
+                try {
+                    FcmNotification::fcmPushNotification(
+                        $token->device_token,
+                        StringTemplate::notifications(8),
+                        StringTemplate::notificationsTitle(8, $id),
+                        $id,
+                        8
+                    );
+                } catch (\Exception $e) {
+                    return ResponseFormatter::errorResponse($e->getMessage());
+                }
+            }
         }
     }
 }

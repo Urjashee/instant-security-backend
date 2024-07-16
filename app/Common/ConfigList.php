@@ -144,7 +144,7 @@ class ConfigList {
                 return "Extra time Rejected";
                 break;
             case(8):
-                return "--";
+                return "Chat";
                 break;
             case(9):
                 return "Job Accepted";
