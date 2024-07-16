@@ -88,5 +88,6 @@ class ChatController extends Controller
                 }
             }
         }
+        return ResponseFormatter::successResponse("Chat notification sent");
     }
 }
