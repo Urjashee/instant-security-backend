@@ -218,6 +218,8 @@ class UserFunctions
             "user_state_name" => $userProfile->user->state->name,
             "user_city" => $userProfile->city,
             "user_zipcode" => $userProfile->zipcode,
+            "user_full_address" => $userProfile->address1 . self::addressFormat($userProfile->address2) . self::addressFormat($userProfile->user->state->name) .
+                self::addressFormat($userProfile->city) . self::addressFormat($userProfile->zipcode),
             "user_profile_image" => $userProfile->profile_image == null ? "" : $s3SiteName . $userProfile->profile_image,
             "user_ssc_image" => $userProfile->ssc_image == null ? "" : $s3SiteName . $userProfile->ssc_image,
             "user_govt_id_image" => $userProfile->govt_id_image == null ? "" : $s3SiteName . $userProfile->govt_id_image,
@@ -253,6 +255,8 @@ class UserFunctions
             "web_state" => $userProfile->user->state_id,
             "web_city" => $userProfile->city,
             "web_zipcode" => $userProfile->zipcode,
+            "web_full_address" => $userProfile->address1 . self::addressFormat($userProfile->address2) . self::addressFormat($userProfile->user->state->name) .
+                self::addressFormat($userProfile->city) . self::addressFormat($userProfile->zipcode),
             "web_customer_card_details" => $userProfile->card_details,
             "web_customer_id" => $userProfile->customer_id,
             "web_profile_image" => $userProfile->profile_image == null ? "" : $s3SiteName . $userProfile->profile_image,
@@ -264,5 +268,10 @@ class UserFunctions
         ];
 
         return $contentData;
+    }
+    public static function addressFormat($data) {
+        if ($data !== null) {
+            return ", " . $data;
+        }
     }
 }
