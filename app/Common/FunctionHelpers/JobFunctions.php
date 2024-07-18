@@ -835,8 +835,8 @@ class JobFunctions
                     "job_start_date" => Carbon::createFromTimestamp($jobs->event_start)->format('Y-m-d\TH:i:s.uP'),
                     "job_posted_by_name" => $customer_profile->user->first_name . " " . $customer_profile->user->last_name,
                     "job_posted_by_image" => $s3SiteName . $customer_profile->profile_image,
-                    "job_status_id" => 10,
-                    "job_status_name" => ConfigList::jobType(10),
+                    "job_status_id" => 8,
+                    "job_status_name" => ConfigList::jobType(8),
                 ];
             }
         }
