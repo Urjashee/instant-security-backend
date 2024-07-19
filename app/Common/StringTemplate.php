@@ -113,7 +113,7 @@ class StringTemplate
                 return "Additional time rejected for the job ". $job;
                 break;
             case(8):
-                return "Someone is chatting on the job ". $job;
+                return "You have a new message on ". $job;
                 break;
             default:
                 return 'Something went wrong.';
