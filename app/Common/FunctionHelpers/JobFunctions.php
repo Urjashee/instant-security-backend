@@ -335,6 +335,7 @@ class JobFunctions
                     "job_review" => true,
                     "job_review_rating" => $job_review->rating,
                     "job_review_message" => $job_review->message,
+                    "job_review_message_time" => $job_review->created_at,
                 ];
             } else {
                 $content_data += [
