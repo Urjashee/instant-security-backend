@@ -58,6 +58,7 @@ class ChatController extends Controller
 
     public function sendChatNotification(Request $request, $id) {
         $user = null;
+        $jobs = SecurityJob::where("id", $id)->first();
         if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::WEB_USER) {
             $jobDetails = JobDetail::where("job_id", $id)->first();
             if ($jobDetails) {
@@ -65,7 +66,6 @@ class ChatController extends Controller
             }
         }
         else if ($request->input(Constants::CURRENT_ROLE_ID_KEY) == Constants::MOBILE_USER) {
-            $jobs = SecurityJob::where("id", $id)->first();
             if ($jobs) {
                 $user = $jobs->user_id ;
             }
@@ -79,7 +79,7 @@ class ChatController extends Controller
                     FcmNotification::fcmPushNotification(
                         $token->device_token,
                         StringTemplate::notifications(8),
-                        StringTemplate::notificationsTitle(8, $id),
+                        StringTemplate::notificationsTitle(8, $jobs->event_name),
                         $id,
                         8
                     );
