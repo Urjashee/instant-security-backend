@@ -924,7 +924,7 @@ class JobFunctions
             "last_page" => ceil($total / $take)
         ];
     }
-    public static function transactions($jobs, $job_detail): array
+    public static function transactions($jobs, $job_detail): \Illuminate\Http\JsonResponse
     {
         try {
             StripeHelper::payInvoices($jobs->invoice_id);
