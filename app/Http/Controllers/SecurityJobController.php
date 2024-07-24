@@ -772,22 +772,7 @@ class SecurityJobController extends Controller
                 $jobs = SecurityJob::where("id", $job_id)->first();
                 $jobs->job_status = Constants::COMPLETED;
                 $job_details->clock_out_request_accepted = Constants::ACCEPTED;
-                try {
-                    StripeHelper::payInvoices($jobs->invoice_id);
-                } catch (\Exception $e) {
-                    return ResponseFormatter::errorResponse($e->getMessage());
-                }
-                $jobs->invoice_paid = Constants::ACCEPTED;
-                $jobs->update();
-                $job_details->update();
-                $transactions = new Transaction();
-                $transactions->job_id = $job_id;
-                $transactions->customer_id = $jobs->user_id;
-                $transactions->guard_id = $job_details->guard_id;
-                $transactions->transaction_date = strtotime(Carbon::now()->toDateTimeString());
-                $transactions->amount_to_guard = $jobs->total_price * 0.8;
-                $transactions->amount_to_app = $jobs->total_price * 0.2;
-                $transactions->save();
+                JobFunctions::transactions($jobs, $job_details);
                 return ResponseFormatter::successResponse("Clock-out accepted");
             }
         }
@@ -815,23 +800,32 @@ class SecurityJobController extends Controller
                 $jobs = SecurityJob::where("id", $job_id)->first();
                 $jobs->job_status = Constants::COMPLETED;
                 $job_details->clock_out_request_accepted = Constants::ACCEPTED;
-                try {
-                    StripeHelper::payInvoices($jobs->invoice_id);
-                } catch (\Exception $e) {
-                    return ResponseFormatter::errorResponse($e->getMessage());
-                }
-                $jobs->invoice_paid = Constants::ACCEPTED;
-                $jobs->update();
-                $job_details->update();
-                $transactions = new Transaction();
-                $transactions->job_id = $job_id;
-                $transactions->customer_id = $jobs->user_id;
-                $transactions->guard_id = $job_details->guard_id;
-                $transactions->transaction_date = strtotime(Carbon::now()->toDateTimeString());
-                $transactions->amount_to_guard = $jobs->total_price * 0.8;
-                $transactions->amount_to_app = $jobs->total_price * 0.2;
-                $transactions->save();
+                JobFunctions::transactions($jobs, $job_details);
                 return ResponseFormatter::successResponse("Clock-out accepted");
+            }
+        }
+    }
+
+    public function autoClockOut()
+    {
+        $job_details = JobDetail::where("clock_in_request_accepted", Constants::ACCEPTED)
+            ->where("clock_out_request", Constants::INACTIVE)
+            ->get();
+        if ($job_details) {
+            foreach ($job_details as $job_detail) {
+                $jobs = SecurityJob::where("id", $job_detail->job_id)
+                    ->where("event_end", "<", time())
+                    ->whereIn('security_jobs.job_status', [1, 4])
+                    ->where("additional_hours_accepted", 0)
+                    ->first();
+                if ($jobs) {
+                    $jobs->job_status = Constants::COMPLETED;
+                    $job_detail->clock_in_request = Constants::ACCEPTED;
+                    $job_detail->clock_in_request_accepted = Constants::ACCEPTED;
+                    $job_detail->clock_out_request = Constants::ACCEPTED;
+                    $job_detail->clock_out_request_accepted = Constants::ACCEPTED;
+                    JobFunctions::transactions($jobs, $job_detail);
+                }
             }
         }
     }
@@ -1017,45 +1011,6 @@ class SecurityJobController extends Controller
             return ResponseFormatter::successResponse("Jobs has been updated");
         } else {
             return ResponseFormatter::errorResponse("No Jobs");
-        }
-    }
-
-    public function autoClockOut()
-    {
-        $job_details = JobDetail::where("clock_in_request_accepted", Constants::ACCEPTED)
-            ->where("clock_out_request", Constants::INACTIVE)
-            ->get();
-        if ($job_details) {
-            foreach ($job_details as $job_detail) {
-                $jobs = SecurityJob::where("id", $job_detail->job_id)
-                    ->where("event_end", "<", time())
-                    ->whereIn('security_jobs.job_status', [1, 4])
-                    ->where("additional_hours_accepted", 0)
-                    ->first();
-                if ($jobs) {
-                    $jobs->job_status = Constants::COMPLETED;
-                    $job_detail->clock_in_request = Constants::ACCEPTED;
-                    $job_detail->clock_in_request_accepted = Constants::ACCEPTED;
-                    $job_detail->clock_out_request = Constants::ACCEPTED;
-                    $job_detail->clock_out_request_accepted = Constants::ACCEPTED;
-                    try {
-                        StripeHelper::payInvoices($jobs->invoice_id);
-                    } catch (\Exception $e) {
-                        return ResponseFormatter::errorResponse($e->getMessage() . $jobs->id);
-                    }
-                    $jobs->invoice_paid = Constants::ACCEPTED;
-                    $jobs->update();
-                    $job_detail->update();
-                    $transactions = new Transaction();
-                    $transactions->job_id = $job_detail->job_id;
-                    $transactions->customer_id = $jobs->user_id;
-                    $transactions->guard_id = $job_detail->guard_id;
-                    $transactions->transaction_date = strtotime(Carbon::now()->toDateTimeString());
-                    $transactions->amount_to_guard = $jobs->total_price * 0.8;
-                    $transactions->amount_to_app = $jobs->total_price * 0.2;
-                    $transactions->save();
-                }
-            }
         }
     }
 

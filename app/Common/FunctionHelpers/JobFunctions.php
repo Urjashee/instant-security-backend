@@ -924,5 +924,24 @@ class JobFunctions
             "last_page" => ceil($total / $take)
         ];
     }
+    public static function transactions($jobs, $job_detail): array
+    {
+        try {
+            StripeHelper::payInvoices($jobs->invoice_id);
+        } catch (\Exception $e) {
+            return ResponseFormatter::errorResponse($e->getMessage() . $jobs->id);
+        }
+        $jobs->invoice_paid = Constants::ACCEPTED;
+        $jobs->update();
+        $job_detail->update();
+        $transactions = new Transaction();
+        $transactions->job_id = $job_detail->job_id;
+        $transactions->customer_id = $jobs->user_id;
+        $transactions->guard_id = $job_detail->guard_id;
+        $transactions->transaction_date = strtotime(Carbon::now()->toDateTimeString());
+        $transactions->amount_to_guard = $jobs->total_price * 0.8;
+        $transactions->amount_to_app = $jobs->total_price * 0.2;
+        $transactions->save();
+    }
 
 }
