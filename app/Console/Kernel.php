@@ -15,8 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('command:expire_jobs')->everyMinute();
-        $schedule->command('command:clock_out')->everyMinute();
+        $schedule->command('command:expire_jobs')->dailyAt('00:00');
+        $schedule->command('command:clock_out')->dailyAt('00:00');
     }
 
     /**

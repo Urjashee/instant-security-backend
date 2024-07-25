@@ -809,14 +809,14 @@ class SecurityJobController extends Controller
     public function autoClockOut()
     {
         $job_details = JobDetail::where("clock_in_request_accepted", Constants::ACCEPTED)
-            ->where("clock_out_request", Constants::INACTIVE)
+            ->where("clock_out_response", Constants::INACTIVE)
             ->get();
         if ($job_details) {
             foreach ($job_details as $job_detail) {
                 $jobs = SecurityJob::where("id", $job_detail->job_id)
                     ->where("event_end", "<", time())
                     ->whereIn('security_jobs.job_status', [1, 4])
-                    ->where("additional_hours_accepted", 0)
+//                    ->where("additional_hours_accepted", 0)
                     ->first();
                 if ($jobs) {
                     $jobs->job_status = Constants::COMPLETED;
