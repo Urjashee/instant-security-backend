@@ -942,6 +942,7 @@ class JobFunctions
         $transactions->amount_to_guard = $jobs->total_price * 0.8;
         $transactions->amount_to_app = $jobs->total_price * 0.2;
         $transactions->save();
+        return ResponseFormatter::successResponse("clocked out");
     }
 
 }
